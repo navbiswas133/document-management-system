@@ -1,11 +1,23 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { generateOTP } from './authApi';
 import { loginSchema } from './loginSchema';
 import styles from './LoginPage.module.css';
 
+function getErrorMessage(error) {
+  const data = error.response?.data;
+  if (typeof data === 'string' && data.trim()) {
+    return data;
+  }
+  return 'Unable to send OTP. Please try again.';
+}
+
 export function LoginPage() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const {
     register,
@@ -16,10 +28,20 @@ export function LoginPage() {
     defaultValues: { mobile: '' },
   });
 
-  function onSubmit() {
+  async function onSubmit({ mobile }) {
+    if (isLoading) return;
+
+    setApiError('');
     setIsLoading(true);
-    // API and OTP flow will be added in a later task.
-    setIsLoading(false);
+
+    try {
+      await generateOTP(mobile);
+      navigate('/verify-otp', { state: { mobile_number: mobile } });
+    } catch (error) {
+      setApiError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -51,6 +73,8 @@ export function LoginPage() {
               <p className={styles.error}>{errors.mobile.message}</p>
             )}
           </div>
+
+          {apiError && <p className={styles.error}>{apiError}</p>}
 
           <button type="submit" className={styles.button} disabled={isLoading}>
             {isLoading ? 'Sending OTP…' : 'Send OTP'}
