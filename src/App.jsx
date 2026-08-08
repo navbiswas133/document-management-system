@@ -1,8 +1,11 @@
+import { BrowserRouter } from 'react-router-dom';
+import { AppRoutes } from './app/routes';
+
 function App() {
   return (
-    <div>
-      <h1>Document Management System</h1>
-    </div>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 
