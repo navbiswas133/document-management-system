@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema } from './loginSchema';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit } = useForm({
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
     defaultValues: { mobile: '' },
   });
 
@@ -24,11 +32,7 @@ export function LoginPage() {
           </p>
         </header>
 
-        <form
-          className={styles.form}
-          onSubmit={handleSubmit(onSubmit)}
-          noValidate
-        >
+        <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="mobile">
               Mobile number
@@ -41,17 +45,14 @@ export function LoginPage() {
               placeholder="e.g. 9876543210"
               className={styles.input}
               disabled={isLoading}
-              aria-busy={isLoading}
               {...register('mobile')}
             />
+            {errors.mobile && (
+              <p className={styles.error}>{errors.mobile.message}</p>
+            )}
           </div>
 
-          <button
-            type="submit"
-            className={styles.button}
-            disabled={isLoading}
-            aria-busy={isLoading}
-          >
+          <button type="submit" className={styles.button} disabled={isLoading}>
             {isLoading ? 'Sending OTP…' : 'Send OTP'}
           </button>
         </form>

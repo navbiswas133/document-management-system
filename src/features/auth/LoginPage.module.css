@@ -76,6 +76,12 @@
   background: var(--bg);
 }
 
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
 .button {
   width: 100%;
   padding: 12px var(--space-md);
