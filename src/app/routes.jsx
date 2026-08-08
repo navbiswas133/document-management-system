@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
+import { LoginPage } from '../features/auth/LoginPage';
 
 function DocumentPage() {
   const { documentId } = useParams();
@@ -10,7 +11,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<h1>Login</h1>} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/verify-otp" element={<h1>Verify OTP</h1>} />
 
       <Route element={<AppLayout />}>
