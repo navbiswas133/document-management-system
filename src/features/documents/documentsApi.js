@@ -68,6 +68,73 @@ export async function fetchDocumentById(documentId) {
   );
 }
 
+export async function fetchAllSearchDocuments(getRequestBody, totalHint) {
+  if (totalHint === 0) {
+    return [];
+  }
+
+  if (totalHint) {
+    const bulkResponse = await searchDocuments(
+      getRequestBody(0, totalHint),
+    );
+    const { documents: bulkDocuments, total } = parseSearchDocumentResponse(
+      bulkResponse,
+    );
+
+    if (bulkDocuments.length >= total || bulkDocuments.length >= totalHint) {
+      return bulkDocuments;
+    }
+
+    const allDocuments = [...bulkDocuments];
+    const remainingTotal = total;
+
+    const restStarts = [];
+
+    for (let start = bulkDocuments.length; start < remainingTotal; start += PAGE_SIZE) {
+      restStarts.push(start);
+    }
+
+    const pageResults = await Promise.all(
+      restStarts.map(async (start) => {
+        const batchLength = Math.min(PAGE_SIZE, remainingTotal - start);
+        const response = await searchDocuments(
+          getRequestBody(start, batchLength),
+        );
+        return parseSearchDocumentResponse(response).documents;
+      }),
+    );
+
+    allDocuments.push(...pageResults.flat());
+
+    return allDocuments;
+  }
+
+  const allDocuments = [];
+  let start = 0;
+  let total = null;
+
+  while (true) {
+    const response = await searchDocuments(getRequestBody(start, PAGE_SIZE));
+    const { documents, total: responseTotal } = parseSearchDocumentResponse(
+      response,
+    );
+
+    if (total === null) {
+      total = responseTotal;
+    }
+
+    allDocuments.push(...documents);
+
+    if (allDocuments.length >= total || documents.length < PAGE_SIZE) {
+      break;
+    }
+
+    start += documents.length;
+  }
+
+  return allDocuments;
+}
+
 export async function searchDocuments(
   requestBody = DEFAULT_SEARCH_REQUEST_BODY,
   options = {},

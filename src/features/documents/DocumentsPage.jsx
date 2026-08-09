@@ -14,6 +14,7 @@ import {
   PAGE_SIZE,
   searchDocuments,
 } from './documentsApi';
+import { downloadSearchResultsAsZip } from './documentFileActions';
 import { formatSearchDateForApi } from './searchFilters';
 import { parseSearchDocumentResponse } from './searchDocumentResponse';
 import styles from './DocumentsPage.module.css';
@@ -55,6 +56,10 @@ export function DocumentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState('');
+  const [downloadNotice, setDownloadNotice] = useState('');
+  const [downloadNoticeType, setDownloadNoticeType] = useState('success');
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+  const [zipProgress, setZipProgress] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
@@ -190,6 +195,62 @@ export function DocumentsPage() {
 
   const filtersActive = hasActiveFilters(filters, searchQuery);
 
+  function buildCurrentSearchRequestBody(start, length) {
+    return buildSearchRequestBody({
+      searchValue: searchQueryRef.current.trim(),
+      majorHead: filtersRef.current.majorHead,
+      minorHead: filtersRef.current.minorHead,
+      tags: [
+        filtersRef.current.tag1.trim(),
+        filtersRef.current.tag2.trim(),
+      ],
+      fromDate: formatSearchDateForApi(filtersRef.current.fromDate),
+      toDate: formatSearchDateForApi(filtersRef.current.toDate),
+      start,
+      length,
+    });
+  }
+
+  async function handleDownloadAllZip() {
+    if (isDownloadingZip || isLoading || totalCount === 0) {
+      return;
+    }
+
+    setIsDownloadingZip(true);
+    setDownloadNotice('');
+    setDownloadNoticeType('success');
+    setZipProgress({ completed: 0, total: totalCount });
+
+    try {
+      const result = await downloadSearchResultsAsZip({
+        getRequestBody: buildCurrentSearchRequestBody,
+        totalCount,
+        zipFilename: `documents-${new Date().toISOString().slice(0, 10)}.zip`,
+        onProgress: ({ completed, total, building }) => {
+          setZipProgress({ completed, total, building });
+        },
+      });
+
+      if (result.failedCount > 0) {
+        setDownloadNoticeType('success');
+        setDownloadNotice(
+          `ZIP downloaded with ${result.downloadedCount} file(s). ${result.failedCount} file(s) could not be included.`,
+        );
+      } else {
+        setDownloadNoticeType('success');
+        setDownloadNotice(`ZIP downloaded with ${result.downloadedCount} file(s).`);
+      }
+    } catch (downloadError) {
+      setDownloadNoticeType('error');
+      setDownloadNotice(
+        getApiErrorMessage(downloadError, 'Unable to download ZIP. Please try again.'),
+      );
+    } finally {
+      setIsDownloadingZip(false);
+      setZipProgress(null);
+    }
+  }
+
   function handleFilterChange(field, value) {
     setFilters((current) => {
       const next = { ...current, [field]: value };
@@ -240,12 +301,23 @@ export function DocumentsPage() {
             </svg>
             Upload Document
           </Link>
-          <button type="button" className={styles.outlineButton} disabled>
+          <button
+            type="button"
+            className={styles.outlineButton}
+            disabled={isLoading || isDownloadingZip || totalCount === 0}
+            onClick={handleDownloadAllZip}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Download All (ZIP)
+            {isDownloadingZip
+              ? zipProgress?.building
+                ? 'Building ZIP…'
+                : zipProgress
+                  ? `Downloading ${zipProgress.completed} of ${zipProgress.total}…`
+                  : 'Preparing ZIP…'
+              : 'Download All (ZIP)'}
           </button>
           <button type="button" className={styles.outlineButton} disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -274,6 +346,19 @@ export function DocumentsPage() {
       {apiError && (
         <p className={styles.apiNotice} role="alert">
           {apiError}
+        </p>
+      )}
+
+      {downloadNotice && (
+        <p
+          className={
+            downloadNoticeType === 'error'
+              ? styles.apiNotice
+              : styles.downloadNotice
+          }
+          role={downloadNoticeType === 'error' ? 'alert' : 'status'}
+        >
+          {downloadNotice}
         </p>
       )}
 

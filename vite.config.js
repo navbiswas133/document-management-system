@@ -9,4 +9,24 @@ export default defineConfig({
       'lodash/debounce': 'lodash/debounce.js',
     },
   },
+  server: {
+    proxy: {
+      '/s3-files': {
+        target: 'https://allsoft-consulting.s3.ap-south-1.amazonaws.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/s3-files/, ''),
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/s3-files': {
+        target: 'https://allsoft-consulting.s3.ap-south-1.amazonaws.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/s3-files/, ''),
+      },
+    },
+  },
 })

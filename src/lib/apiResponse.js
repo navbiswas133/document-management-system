@@ -38,6 +38,10 @@ export function getApiErrorMessage(error, fallback) {
     return error.message;
   }
 
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
   const data = error.response?.data;
 
   if (typeof data === 'string' && data.trim()) {
