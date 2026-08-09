@@ -1,14 +1,25 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { validateOTP } from './authApi';
 import { verifyOtpSchema } from './verifyOtpSchema';
 import styles from './VerifyOtpPage.module.css';
 
+function getErrorMessage(error) {
+  const data = error.response?.data;
+  if (typeof data === 'string' && data.trim()) {
+    return data;
+  }
+  return 'Unable to verify OTP. Please try again.';
+}
+
 export function VerifyOtpPage() {
+  const navigate = useNavigate();
   const { state } = useLocation();
   const mobileNumber = state?.mobile_number;
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const {
     register,
@@ -19,12 +30,25 @@ export function VerifyOtpPage() {
     defaultValues: { otp: '' },
   });
 
-  function onSubmit() {
+  async function onSubmit({ otp }) {
     if (isLoading) return;
 
+    if (!mobileNumber) {
+      setApiError('Mobile number is missing. Please sign in again.');
+      return;
+    }
+
+    setApiError('');
     setIsLoading(true);
-    // OTP verification API will be added in a later task.
-    setIsLoading(false);
+
+    try {
+      await validateOTP(mobileNumber, otp);
+      navigate('/dashboard');
+    } catch (error) {
+      setApiError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -58,6 +82,8 @@ export function VerifyOtpPage() {
               <p className={styles.error}>{errors.otp.message}</p>
             )}
           </div>
+
+          {apiError && <p className={styles.error}>{apiError}</p>}
 
           <button type="submit" className={styles.button} disabled={isLoading}>
             {isLoading ? 'Verifying…' : 'Verify'}
