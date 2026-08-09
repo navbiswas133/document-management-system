@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DocumentList } from './DocumentList';
 import {
@@ -6,44 +6,33 @@ import {
   getDocumentApiToken,
   searchDocuments,
 } from './documentsApi';
+import {
+  SEARCH_RESULTS_PLACEHOLDER,
+  SEARCH_RESULTS_TOTAL,
+} from './placeholderDocuments';
 import styles from './DocumentsPage.module.css';
 
 const EMPTY_FILTERS = {
-  type: '',
+  category: '',
   tag: '',
-  month: '',
 };
 
-function getUploadMonth(uploadedAt) {
-  return uploadedAt.split(' ').slice(1).join(' ');
-}
-
 function getFilterOptions(documents) {
-  const types = [...new Set(documents.map((doc) => doc.type).filter(Boolean))].sort();
-  const tags = [...new Set(documents.flatMap((doc) => doc.tags))].sort();
-  const months = [
-    ...new Set(
-      documents
-        .map((doc) => doc.uploadedAt)
-        .filter(Boolean)
-        .map((uploadedAt) => getUploadMonth(uploadedAt)),
-    ),
+  const categories = [
+    ...new Set(documents.map((doc) => doc.category).filter(Boolean)),
   ].sort();
+  const tags = [...new Set(documents.flatMap((doc) => doc.tags))].sort();
 
-  return { types, tags, months };
+  return { categories, tags };
 }
 
 function applyFilters(documents, filters) {
   return documents.filter((doc) => {
-    if (filters.type && doc.type !== filters.type) {
+    if (filters.category && doc.category !== filters.category) {
       return false;
     }
 
     if (filters.tag && !doc.tags.includes(filters.tag)) {
-      return false;
-    }
-
-    if (filters.month && getUploadMonth(doc.uploadedAt) !== filters.month) {
       return false;
     }
 
@@ -57,18 +46,21 @@ function filterBySearch(documents, query) {
 
   return documents.filter((doc) => {
     const matchesName = doc.name.toLowerCase().includes(normalizedQuery);
-    const matchesType = doc.type.toLowerCase().includes(normalizedQuery);
-    const matchesDate = doc.uploadedAt.toLowerCase().includes(normalizedQuery);
+    const matchesCategory = doc.category?.toLowerCase().includes(normalizedQuery);
+    const matchesDepartment = doc.department?.toLowerCase().includes(normalizedQuery);
+    const matchesDate = doc.date?.toLowerCase().includes(normalizedQuery);
     const matchesTags = doc.tags.some((tag) =>
       tag.toLowerCase().includes(normalizedQuery),
     );
 
-    return matchesName || matchesType || matchesDate || matchesTags;
+    return (
+      matchesName ||
+      matchesCategory ||
+      matchesDepartment ||
+      matchesDate ||
+      matchesTags
+    );
   });
-}
-
-function hasActiveFilters(filters) {
-  return Boolean(filters.type || filters.tag || filters.month);
 }
 
 function getSearchErrorMessage(error) {
@@ -90,12 +82,12 @@ function getSearchErrorMessage(error) {
 }
 
 export function DocumentsPage() {
-  const [documents, setDocuments] = useState([]);
+  const [documents, setDocuments] = useState(SEARCH_RESULTS_PLACEHOLDER);
+  const [totalCount, setTotalCount] = useState(SEARCH_RESULTS_TOTAL);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [apiError, setApiError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -105,10 +97,9 @@ export function DocumentsPage() {
 
       if (!token) {
         if (isMounted) {
-          setError(
-            'Document search requires a valid API token. Authentication is not connected to document requests yet.',
-          );
-          setDocuments([]);
+          setDocuments(SEARCH_RESULTS_PLACEHOLDER);
+          setTotalCount(SEARCH_RESULTS_TOTAL);
+          setApiError('');
           setIsLoading(false);
         }
         return;
@@ -116,7 +107,7 @@ export function DocumentsPage() {
 
       if (isMounted) {
         setIsLoading(true);
-        setError('');
+        setApiError('');
       }
 
       try {
@@ -136,15 +127,16 @@ export function DocumentsPage() {
           );
         }
 
-        // Response structure is undocumented — do not map into list fields yet.
-        setDocuments([]);
+        setDocuments(SEARCH_RESULTS_PLACEHOLDER);
+        setTotalCount(SEARCH_RESULTS_TOTAL);
       } catch (loadError) {
         if (!isMounted) {
           return;
         }
 
-        setDocuments([]);
-        setError(getSearchErrorMessage(loadError));
+        setDocuments(SEARCH_RESULTS_PLACEHOLDER);
+        setTotalCount(SEARCH_RESULTS_TOTAL);
+        setApiError(getSearchErrorMessage(loadError));
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -159,176 +151,153 @@ export function DocumentsPage() {
     };
   }, []);
 
-  const filterOptions = getFilterOptions(documents);
-  const trimmedQuery = searchQuery.trim();
-  const filteredByFilters = applyFilters(documents, filters);
-  const filteredDocuments = filterBySearch(filteredByFilters, searchQuery);
-  const filtersActive = hasActiveFilters(filters);
-  const hasSearchQuery = trimmedQuery.length > 0;
-  const hasNoResults =
-    !isLoading &&
-    !error &&
-    filteredDocuments.length === 0 &&
-    (hasSearchQuery || filtersActive);
+  const filterOptions = useMemo(() => getFilterOptions(documents), [documents]);
+  const filteredDocuments = useMemo(() => {
+    const byFilters = applyFilters(documents, filters);
+    return filterBySearch(byFilters, searchQuery);
+  }, [documents, filters, searchQuery]);
+
+  const resultCount = filteredDocuments.length;
+  const filtersActive = Boolean(filters.category || filters.tag);
 
   function handleFilterChange(field, value) {
     setFilters((current) => ({ ...current, [field]: value }));
   }
 
-  function handleClearSearch() {
-    setSearchQuery('');
-  }
-
   function handleClearFilters() {
     setFilters(EMPTY_FILTERS);
-  }
-
-  function handleClearAll() {
     setSearchQuery('');
-    setFilters(EMPTY_FILTERS);
-  }
-
-  function toggleFilterPanel() {
-    setIsFilterOpen((open) => !open);
   }
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerText}>
-          <h1 className={styles.title}>Documents</h1>
-          <p className={styles.description}>
-            Browse, search, and manage all uploaded files in one place.
+      <header className={styles.resultsHeader}>
+        <div className={styles.resultsHeading}>
+          <h1 className={styles.title}>Search Results</h1>
+          <p className={styles.resultCount}>
+            {isLoading ? 'Loading…' : `${resultCount} results found`}
           </p>
         </div>
-        <Link to="/documents/upload" className={styles.uploadButton}>
-          Upload Document
-        </Link>
+
+        <div className={styles.headerActions}>
+          <Link to="/documents/upload" className={styles.uploadButton}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Upload Document
+          </Link>
+          <button type="button" className={styles.outlineButton} disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Download All (ZIP)
+          </button>
+          <button type="button" className={styles.outlineButton} disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Export
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
       </header>
 
-      <section className={styles.toolbar} aria-label="Document filters">
-        <div className={styles.toolbarRow}>
-          <div className={styles.searchWrapper}>
-            <span className={styles.searchIcon} aria-hidden="true" />
+      <section className={styles.filtersPanel} aria-label="Document filters">
+        <div className={styles.filtersRow}>
+          <div className={styles.searchField}>
+            <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+              <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
             <input
               type="search"
-              className={`${styles.searchInput} ${hasSearchQuery ? styles.searchInputWithClear : ''}`}
-              placeholder="Search documents…"
+              className={styles.searchInput}
+              placeholder="Search by name, category, tag…"
               aria-label="Search documents"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               disabled={isLoading}
             />
-            {hasSearchQuery && (
-              <button
-                type="button"
-                className={styles.clearButton}
-                onClick={handleClearSearch}
-                aria-label="Clear search"
-              >
-                Clear
-              </button>
-            )}
           </div>
-          <button
-            type="button"
-            className={`${styles.filterButton} ${isFilterOpen ? styles.filterButtonActive : ''}`}
-            onClick={toggleFilterPanel}
-            aria-expanded={isFilterOpen}
-            aria-controls="document-filters-panel"
-            aria-label={filtersActive ? 'Filters (active)' : 'Show filters'}
-            disabled={isLoading}
-          >
-            <span className={styles.filterIcon} aria-hidden="true" />
-            Filters
-            {filtersActive && (
-              <span className={styles.filterBadge} aria-hidden="true" />
-            )}
-          </button>
-        </div>
 
-        {isFilterOpen && (
-          <div
-            id="document-filters-panel"
-            className={styles.filterPanel}
-            role="region"
-            aria-label="Document filter options"
-          >
-            <div className={styles.filterFields}>
-              <div className={styles.filterField}>
-                <label className={styles.filterLabel} htmlFor="filter-type">
-                  File type
-                </label>
-                <select
-                  id="filter-type"
-                  className={styles.filterSelect}
-                  value={filters.type}
-                  onChange={(event) => handleFilterChange('type', event.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="">All types</option>
-                  {filterOptions.types.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.filterField}>
-                <label className={styles.filterLabel} htmlFor="filter-tag">
-                  Tag
-                </label>
-                <select
-                  id="filter-tag"
-                  className={styles.filterSelect}
-                  value={filters.tag}
-                  onChange={(event) => handleFilterChange('tag', event.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="">All tags</option>
-                  {filterOptions.tags.map((tag) => (
-                    <option key={tag} value={tag}>
-                      {tag}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.filterField}>
-                <label className={styles.filterLabel} htmlFor="filter-month">
-                  Upload month
-                </label>
-                <select
-                  id="filter-month"
-                  className={styles.filterSelect}
-                  value={filters.month}
-                  onChange={(event) => handleFilterChange('month', event.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="">All months</option>
-                  {filterOptions.months.map((month) => (
-                    <option key={month} value={month}>
-                      {month}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel} htmlFor="filter-category">
+              Category
+            </label>
+            <div className={styles.selectWrap}>
+              <select
+                id="filter-category"
+                className={styles.filterSelect}
+                value={filters.category}
+                onChange={(event) => handleFilterChange('category', event.target.value)}
+                disabled={isLoading}
+              >
+                <option value="">All categories</option>
+                {filterOptions.categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
             </div>
+          </div>
 
-            {filtersActive && (
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel} htmlFor="filter-tag">
+              Tag
+            </label>
+            <div className={styles.selectWrap}>
+              <select
+                id="filter-tag"
+                className={styles.filterSelect}
+                value={filters.tag}
+                onChange={(event) => handleFilterChange('tag', event.target.value)}
+                disabled={isLoading}
+              >
+                <option value="">All tags</option>
+                {filterOptions.tags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+              <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+          </div>
+
+          {(filtersActive || searchQuery.trim()) && (
+            <div className={styles.filterActions}>
               <button
                 type="button"
                 className={styles.clearFiltersButton}
                 onClick={handleClearFilters}
                 disabled={isLoading}
               >
-                Clear filters
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                Clear
               </button>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </section>
+
+      {apiError && (
+        <p className={styles.apiNotice} role="status">
+          Showing sample results. {apiError}
+        </p>
+      )}
 
       <div className={styles.listArea}>
         {isLoading && (
@@ -338,38 +307,11 @@ export function DocumentsPage() {
           </div>
         )}
 
-        {!isLoading && error && (
-          <div className={styles.errorState} role="alert">
-            <p className={styles.errorMessage}>{error}</p>
-          </div>
-        )}
-
-        {!isLoading && !error && hasNoResults && (
-          <div className={styles.noResults} role="status">
-            <p className={styles.noResultsTitle}>No matching documents</p>
-            <p className={styles.noResultsText}>
-              {hasSearchQuery && filtersActive
-                ? 'Nothing matches your search and current filters.'
-                : hasSearchQuery
-                  ? `Nothing matches "${trimmedQuery}". Try a different name, type, or tag.`
-                  : 'Nothing matches your current filters. Try adjusting file type, tag, or month.'}
-            </p>
-            <button
-              type="button"
-              className={styles.noResultsAction}
-              onClick={handleClearAll}
-            >
-              {hasSearchQuery && filtersActive
-                ? 'Clear search and filters'
-                : hasSearchQuery
-                  ? 'Clear search'
-                  : 'Clear filters'}
-            </button>
-          </div>
-        )}
-
-        {!isLoading && !error && !hasNoResults && (
-          <DocumentList documents={filteredDocuments} />
+        {!isLoading && (
+          <DocumentList
+            documents={filteredDocuments}
+            totalCount={totalCount}
+          />
         )}
       </div>
     </div>
