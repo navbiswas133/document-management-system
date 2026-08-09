@@ -128,137 +128,10 @@
   border-bottom: 2px solid var(--text-light);
 }
 
-.tableSection {
+.listArea {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-}
-
-.tableWrapper {
-  overflow-x: auto;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9375rem;
-}
-
-.table thead {
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-}
-
-.table th {
-  padding: var(--space-md);
-  color: var(--text-light);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.table td {
-  padding: var(--space-md);
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.actionsHeader {
-  display: block;
-  text-align: right;
-}
-
-.docInfo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  min-width: 0;
-}
-
-.docIcon {
-  flex-shrink: 0;
-  width: 36px;
-  height: 44px;
-  background:
-    linear-gradient(var(--border), var(--border)) 8px 10px / 20px 2px no-repeat,
-    linear-gradient(var(--border), var(--border)) 8px 16px / 14px 2px no-repeat,
-    linear-gradient(var(--border), var(--border)) 8px 22px / 16px 2px no-repeat;
-  background-color: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-}
-
-.docDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.docName {
-  font-weight: 500;
-  word-break: break-word;
-}
-
-.docType {
-  color: var(--text-light);
-  font-size: 0.8125rem;
-}
-
-.date {
-  color: var(--text-light);
-  font-size: 0.875rem;
-}
-
-.tagList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tag {
-  display: inline-block;
-  padding: 2px 8px;
-  color: var(--primary);
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  justify-content: flex-end;
-}
-
-.actionButton {
-  padding: 6px 10px;
-  color: var(--text);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.actionButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
 }
 
 .placeholderNote {
@@ -269,60 +142,6 @@
   text-align: right;
 }
 
-.emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-lg);
-  text-align: center;
-  background: var(--surface);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-}
-
-.emptyIcon {
-  width: 48px;
-  height: 56px;
-  margin-bottom: var(--space-sm);
-  background:
-    linear-gradient(var(--border), var(--border)) 12px 14px / 24px 2px no-repeat,
-    linear-gradient(var(--border), var(--border)) 12px 22px / 18px 2px no-repeat,
-    linear-gradient(var(--border), var(--border)) 12px 30px / 20px 2px no-repeat;
-  background-color: var(--bg);
-  border: 2px solid var(--border);
-  border-radius: 4px;
-}
-
-.emptyTitle {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.emptyDescription {
-  margin: 0;
-  max-width: 360px;
-  color: var(--text-light);
-  font-size: 0.9375rem;
-}
-
-.emptyAction {
-  margin-top: var(--space-sm);
-  padding: 10px var(--space-md);
-  color: #fff;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: none;
-  background: var(--primary);
-  border-radius: var(--radius);
-  transition: opacity 0.15s ease;
-}
-
-.emptyAction:hover {
-  opacity: 0.9;
-}
-
 @media (min-width: 640px) {
   .toolbar {
     flex-direction: row;
@@ -331,10 +150,6 @@
 
   .filterButton {
     flex-shrink: 0;
-  }
-
-  .emptyState {
-    padding: 48px var(--space-lg);
   }
 }
 
@@ -351,47 +166,5 @@
 
   .uploadButton {
     flex-shrink: 0;
-  }
-}
-
-@media (max-width: 767px) {
-  .table thead {
-    display: none;
-  }
-
-  .table,
-  .table tbody,
-  .table tr,
-  .table td {
-    display: block;
-  }
-
-  .table tr {
-    padding: var(--space-md);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .table tbody tr:last-child {
-    border-bottom: none;
-  }
-
-  .table td {
-    padding: var(--space-sm) 0;
-    border-bottom: none;
-  }
-
-  .table td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 4px;
-    color: var(--text-light);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .actions {
-    justify-content: flex-start;
   }
 }
