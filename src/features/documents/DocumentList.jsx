@@ -39,7 +39,9 @@ export function DocumentList({ documents = [] }) {
                     <span className={styles.docIcon} aria-hidden="true" />
                     <div className={styles.docDetails}>
                       <span className={styles.docName}>{doc.name}</span>
-                      <span className={styles.docType}>{doc.type}</span>
+                      {doc.type && (
+                        <span className={styles.docType}>{doc.type}</span>
+                      )}
                     </div>
                   </div>
                 </td>

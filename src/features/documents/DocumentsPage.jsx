@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DocumentList } from './DocumentList';
-import { PLACEHOLDER_DOCUMENTS } from './placeholderDocuments';
+import {
+  DEFAULT_SEARCH_PARAMS,
+  getDocumentApiToken,
+  searchDocuments,
+} from './documentsApi';
+import {
+  extractDocumentEntries,
+  mapDocumentsForList,
+} from './documentMapper';
 import styles from './DocumentsPage.module.css';
 
 const EMPTY_FILTERS = {
@@ -15,9 +23,16 @@ function getUploadMonth(uploadedAt) {
 }
 
 function getFilterOptions(documents) {
-  const types = [...new Set(documents.map((doc) => doc.type))].sort();
+  const types = [...new Set(documents.map((doc) => doc.type).filter(Boolean))].sort();
   const tags = [...new Set(documents.flatMap((doc) => doc.tags))].sort();
-  const months = [...new Set(documents.map((doc) => getUploadMonth(doc.uploadedAt)))].sort();
+  const months = [
+    ...new Set(
+      documents
+        .map((doc) => doc.uploadedAt)
+        .filter(Boolean)
+        .map((uploadedAt) => getUploadMonth(uploadedAt)),
+    ),
+  ].sort();
 
   return { types, tags, months };
 }
@@ -60,19 +75,104 @@ function hasActiveFilters(filters) {
   return Boolean(filters.type || filters.tag || filters.month);
 }
 
+function getSearchErrorMessage(error) {
+  const data = error.response?.data;
+
+  if (typeof data === 'string' && data.trim()) {
+    return data;
+  }
+
+  if (data && typeof data.message === 'string' && data.message.trim()) {
+    return data.message;
+  }
+
+  if (error.response?.statusText) {
+    return error.response.statusText;
+  }
+
+  return 'Unable to load documents. Please try again.';
+}
+
 export function DocumentsPage() {
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const filterOptions = getFilterOptions(PLACEHOLDER_DOCUMENTS);
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDocuments() {
+      const token = getDocumentApiToken();
+
+      if (!token) {
+        if (isMounted) {
+          setError(
+            'Document search requires a valid API token. Authentication is not connected to document requests yet.',
+          );
+          setDocuments([]);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (isMounted) {
+        setIsLoading(true);
+        setError('');
+      }
+
+      try {
+        const response = await searchDocuments(DEFAULT_SEARCH_PARAMS, token);
+
+        if (!isMounted) {
+          return;
+        }
+
+        const entries = extractDocumentEntries(response.data);
+
+        if (entries === null) {
+          setDocuments([]);
+          setError(
+            'Unable to read documents from the API response. The response format is not documented.',
+          );
+          return;
+        }
+
+        setDocuments(mapDocumentsForList(entries));
+      } catch (loadError) {
+        if (!isMounted) {
+          return;
+        }
+
+        setDocuments([]);
+        setError(getSearchErrorMessage(loadError));
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadDocuments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filterOptions = getFilterOptions(documents);
   const trimmedQuery = searchQuery.trim();
-  const filteredByFilters = applyFilters(PLACEHOLDER_DOCUMENTS, filters);
+  const filteredByFilters = applyFilters(documents, filters);
   const filteredDocuments = filterBySearch(filteredByFilters, searchQuery);
   const filtersActive = hasActiveFilters(filters);
   const hasSearchQuery = trimmedQuery.length > 0;
   const hasNoResults =
-    filteredDocuments.length === 0 && (hasSearchQuery || filtersActive);
+    !isLoading &&
+    !error &&
+    filteredDocuments.length === 0 &&
+    (hasSearchQuery || filtersActive);
 
   function handleFilterChange(field, value) {
     setFilters((current) => ({ ...current, [field]: value }));
@@ -120,6 +220,7 @@ export function DocumentsPage() {
               aria-label="Search documents"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              disabled={isLoading}
             />
             {hasSearchQuery && (
               <button
@@ -139,6 +240,7 @@ export function DocumentsPage() {
             aria-expanded={isFilterOpen}
             aria-controls="document-filters-panel"
             aria-label={filtersActive ? 'Filters (active)' : 'Show filters'}
+            disabled={isLoading}
           >
             <span className={styles.filterIcon} aria-hidden="true" />
             Filters
@@ -165,6 +267,7 @@ export function DocumentsPage() {
                   className={styles.filterSelect}
                   value={filters.type}
                   onChange={(event) => handleFilterChange('type', event.target.value)}
+                  disabled={isLoading}
                 >
                   <option value="">All types</option>
                   {filterOptions.types.map((type) => (
@@ -184,6 +287,7 @@ export function DocumentsPage() {
                   className={styles.filterSelect}
                   value={filters.tag}
                   onChange={(event) => handleFilterChange('tag', event.target.value)}
+                  disabled={isLoading}
                 >
                   <option value="">All tags</option>
                   {filterOptions.tags.map((tag) => (
@@ -203,6 +307,7 @@ export function DocumentsPage() {
                   className={styles.filterSelect}
                   value={filters.month}
                   onChange={(event) => handleFilterChange('month', event.target.value)}
+                  disabled={isLoading}
                 >
                   <option value="">All months</option>
                   {filterOptions.months.map((month) => (
@@ -219,6 +324,7 @@ export function DocumentsPage() {
                 type="button"
                 className={styles.clearFiltersButton}
                 onClick={handleClearFilters}
+                disabled={isLoading}
               >
                 Clear filters
               </button>
@@ -228,12 +334,25 @@ export function DocumentsPage() {
       </section>
 
       <div className={styles.listArea}>
-        {hasNoResults ? (
+        {isLoading && (
+          <div className={styles.loadingState} role="status" aria-live="polite">
+            <div className={styles.spinner} aria-hidden="true" />
+            <p>Loading documents…</p>
+          </div>
+        )}
+
+        {!isLoading && error && (
+          <div className={styles.errorState} role="alert">
+            <p className={styles.errorMessage}>{error}</p>
+          </div>
+        )}
+
+        {!isLoading && !error && hasNoResults && (
           <div className={styles.noResults} role="status">
             <p className={styles.noResultsTitle}>No matching documents</p>
             <p className={styles.noResultsText}>
               {hasSearchQuery && filtersActive
-                ? `Nothing matches your search and current filters.`
+                ? 'Nothing matches your search and current filters.'
                 : hasSearchQuery
                   ? `Nothing matches "${trimmedQuery}". Try a different name, type, or tag.`
                   : 'Nothing matches your current filters. Try adjusting file type, tag, or month.'}
@@ -250,13 +369,10 @@ export function DocumentsPage() {
                   : 'Clear filters'}
             </button>
           </div>
-        ) : (
-          <DocumentList documents={filteredDocuments} />
         )}
-        {PLACEHOLDER_DOCUMENTS.length > 0 && (
-          <p className={styles.placeholderNote}>
-            Showing placeholder data for visual development.
-          </p>
+
+        {!isLoading && !error && !hasNoResults && (
+          <DocumentList documents={filteredDocuments} />
         )}
       </div>
     </div>
