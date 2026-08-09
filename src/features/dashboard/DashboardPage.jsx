@@ -1,9 +1,11 @@
+import { Link } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
 
+// Static placeholder values for visual development only — not from the API.
 const summaryItems = [
-  { id: 'documents', label: 'Documents' },
-  { id: 'uploads', label: 'Uploads' },
-  { id: 'tags', label: 'Tags' },
+  { id: 'documents', label: 'Total documents', value: '0' },
+  { id: 'uploads', label: 'Recent uploads', value: '0' },
+  { id: 'tags', label: 'Active tags', value: '0' },
 ];
 
 export function DashboardPage() {
@@ -12,8 +14,8 @@ export function DashboardPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>
         <p className={styles.description}>
-          Welcome to the document management system. Use this page to get an
-          overview of your documents once data is connected.
+          Welcome back. Review your document activity and pick up where you left
+          off.
         </p>
       </header>
 
@@ -21,27 +23,46 @@ export function DashboardPage() {
         <h2 id="summary-heading" className={styles.sectionTitle}>
           Overview
         </h2>
-        <div className={styles.cards}>
+        <ul className={styles.cards}>
           {summaryItems.map((item) => (
-            <article key={item.id} className={styles.card}>
-              <p className={styles.cardLabel}>{item.label}</p>
-              <p className={styles.cardValue} aria-label={`${item.label} placeholder`}>
-                —
-              </p>
-            </article>
+            <li key={item.id}>
+              <article className={styles.card} aria-labelledby={`${item.id}-label`}>
+                <p id={`${item.id}-label`} className={styles.cardLabel}>
+                  {item.label}
+                </p>
+                <p
+                  className={styles.cardValue}
+                  aria-label={`${item.label}: placeholder value ${item.value}`}
+                >
+                  {item.value}
+                </p>
+                <p className={styles.cardNote}>Placeholder</p>
+              </article>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className={styles.section} aria-labelledby="recent-heading">
-        <h2 id="recent-heading" className={styles.sectionTitle}>
-          Recent documents
-        </h2>
-        <div className={styles.emptyState}>
+        <div className={styles.sectionHeader}>
+          <h2 id="recent-heading" className={styles.sectionTitle}>
+            Recent documents
+          </h2>
+          <p className={styles.sectionHint}>
+            Your latest uploads will appear here once connected.
+          </p>
+        </div>
+
+        <div className={styles.emptyState} role="status">
+          <div className={styles.emptyIcon} aria-hidden="true" />
           <p className={styles.emptyTitle}>No documents yet</p>
           <p className={styles.emptyText}>
-            Recent uploads will appear here when document data is available.
+            When you upload files, they will show up in this list for quick
+            access.
           </p>
+          <Link to="/documents/upload" className={styles.emptyAction}>
+            Upload a document
+          </Link>
         </div>
       </section>
     </div>
