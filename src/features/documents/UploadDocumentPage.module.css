@@ -2,7 +2,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  width: 100%;
   max-width: 1100px;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -174,6 +176,14 @@
   font-size: 0.875rem;
 }
 
+.fieldError {
+  border-color: var(--danger);
+}
+
+.fieldError:focus-visible {
+  border-color: var(--danger);
+}
+
 .validationNote {
   margin: 0;
   padding: var(--space-md);
@@ -194,7 +204,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px var(--space-md);
+  padding: 10px var(--space-md);
   color: var(--text);
   font-size: 0.875rem;
   font-weight: 500;
@@ -210,7 +220,7 @@
 }
 
 .submitButton {
-  padding: 12px var(--space-md);
+  padding: 10px var(--space-md);
   color: #fff;
   font-size: 0.875rem;
   font-weight: 500;

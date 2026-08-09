@@ -115,7 +115,7 @@ export function DocumentsPage() {
             <span className={styles.searchIcon} aria-hidden="true" />
             <input
               type="search"
-              className={styles.searchInput}
+              className={`${styles.searchInput} ${hasSearchQuery ? styles.searchInputWithClear : ''}`}
               placeholder="Search documents…"
               aria-label="Search documents"
               value={searchQuery}
@@ -138,6 +138,7 @@ export function DocumentsPage() {
             onClick={toggleFilterPanel}
             aria-expanded={isFilterOpen}
             aria-controls="document-filters-panel"
+            aria-label={filtersActive ? 'Filters (active)' : 'Show filters'}
           >
             <span className={styles.filterIcon} aria-hidden="true" />
             Filters

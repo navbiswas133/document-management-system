@@ -44,6 +44,10 @@ function validateForm(form, file) {
   return errors;
 }
 
+function fieldClassName(baseClass, errorClass, hasError) {
+  return hasError ? `${baseClass} ${errorClass}` : baseClass;
+}
+
 export function UploadDocumentPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState(null);
@@ -122,7 +126,7 @@ export function UploadDocumentPage() {
               id="document-file"
               name="file"
               type="file"
-              className={styles.fileInput}
+              className={fieldClassName(styles.fileInput, styles.fieldError, Boolean(errors.file))}
               onChange={handleFileChange}
               aria-invalid={Boolean(errors.file)}
               aria-describedby={errors.file ? 'document-file-error' : undefined}
@@ -159,7 +163,7 @@ export function UploadDocumentPage() {
                 id="major-head"
                 name="majorHead"
                 type="text"
-                className={styles.input}
+                className={fieldClassName(styles.input, styles.fieldError, Boolean(errors.majorHead))}
                 placeholder="e.g. Company"
                 value={form.majorHead}
                 onChange={(event) =>
@@ -185,7 +189,7 @@ export function UploadDocumentPage() {
                 id="minor-head"
                 name="minorHead"
                 type="text"
-                className={styles.input}
+                className={fieldClassName(styles.input, styles.fieldError, Boolean(errors.minorHead))}
                 placeholder="e.g. Work Order"
                 value={form.minorHead}
                 onChange={(event) =>
@@ -212,7 +216,7 @@ export function UploadDocumentPage() {
               id="document-date"
               name="documentDate"
               type="date"
-              className={styles.input}
+              className={fieldClassName(styles.input, styles.fieldError, Boolean(errors.documentDate))}
               value={form.documentDate}
               onChange={(event) =>
                 handleFieldChange('documentDate', event.target.value)

@@ -30,14 +30,14 @@ export function DocumentDetailsPage() {
   if (!document) {
     return (
       <div className={styles.page}>
-        <Link to="/documents" className={styles.backLink}>
-          Back to documents
-        </Link>
         <section className={styles.notFound} role="status">
           <h1 className={styles.notFoundTitle}>Document not found</h1>
           <p className={styles.notFoundText}>
             This document could not be found in the placeholder data.
           </p>
+          <Link to="/documents" className={styles.notFoundAction}>
+            Back to documents
+          </Link>
         </section>
       </div>
     );
