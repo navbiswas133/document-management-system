@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import debounce from 'lodash/debounce';
 import { getApiErrorMessage } from '../../lib/apiResponse';
 import { DocumentList } from './DocumentList';
 import {
@@ -14,6 +15,8 @@ const EMPTY_FILTERS = {
   category: '',
   tag: '',
 };
+
+const SEARCH_DEBOUNCE_MS = 400;
 
 function getFilterOptions(documents) {
   const categories = [
@@ -56,6 +59,14 @@ function applyFilters(documents, filters) {
   });
 }
 
+function getRequestKey(searchValue, filterState) {
+  return JSON.stringify({
+    search: searchValue.trim(),
+    tag: filterState.tag,
+    category: filterState.category,
+  });
+}
+
 export function DocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -64,69 +75,86 @@ export function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
-  useEffect(() => {
-    let isMounted = true;
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
 
-    async function loadDocuments() {
-      const token = getDocumentApiToken();
+  const lastRequestKeyRef = useRef('');
+  const skipDebouncedSearchRef = useRef(true);
 
-      if (!token) {
-        if (isMounted) {
-          setDocuments([]);
-          setTotalCount(0);
-          setApiError('Authentication required.');
-          setIsLoading(false);
-        }
-        return;
-      }
+  const fetchDocuments = useCallback(async (searchValue, filterState) => {
+    const normalizedSearch = searchValue.trim();
+    const requestKey = getRequestKey(normalizedSearch, filterState);
 
-      if (isMounted) {
-        setIsLoading(true);
-        setApiError('');
-      }
-
-      const requestBody = buildSearchRequestBody({
-        searchValue: searchQuery.trim(),
-        tag: filters.tag,
-        majorHead: filters.category,
-      });
-
-      try {
-        const responseData = await searchDocuments(requestBody);
-
-        if (!isMounted) {
-          return;
-        }
-
-        const { documents: entries, total } = parseSearchDocumentResponse(
-          responseData,
-        );
-
-        setDocuments(entries);
-        setTotalCount(total);
-      } catch (loadError) {
-        if (!isMounted) {
-          return;
-        }
-
-        setDocuments([]);
-        setTotalCount(0);
-        setApiError(
-          getApiErrorMessage(loadError, 'Unable to load documents. Please try again.'),
-        );
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    if (requestKey === lastRequestKeyRef.current) {
+      return;
     }
 
-    loadDocuments();
+    lastRequestKeyRef.current = requestKey;
 
+    const token = getDocumentApiToken();
+
+    if (!token) {
+      setDocuments([]);
+      setTotalCount(0);
+      setApiError('Authentication required.');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setApiError('');
+
+    const requestBody = buildSearchRequestBody({
+      searchValue: normalizedSearch,
+      tag: filterState.tag,
+      majorHead: filterState.category,
+    });
+
+    try {
+      const responseData = await searchDocuments(requestBody);
+      const { documents: entries, total } = parseSearchDocumentResponse(
+        responseData,
+      );
+
+      setDocuments(entries);
+      setTotalCount(total);
+    } catch (loadError) {
+      setDocuments([]);
+      setTotalCount(0);
+      setApiError(
+        getApiErrorMessage(loadError, 'Unable to load documents. Please try again.'),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const debouncedSearchFetch = useMemo(
+    () =>
+      debounce((searchValue) => {
+        fetchDocuments(searchValue, filtersRef.current);
+      }, SEARCH_DEBOUNCE_MS),
+    [fetchDocuments],
+  );
+
+  useEffect(() => {
     return () => {
-      isMounted = false;
+      debouncedSearchFetch.cancel();
     };
-  }, [searchQuery, filters.tag, filters.category]);
+  }, [debouncedSearchFetch]);
+
+  useEffect(() => {
+    fetchDocuments(searchQuery, filters);
+  }, [filters.tag, filters.category, fetchDocuments]);
+
+  useEffect(() => {
+    if (skipDebouncedSearchRef.current) {
+      skipDebouncedSearchRef.current = false;
+      return;
+    }
+
+    debouncedSearchFetch(searchQuery);
+  }, [searchQuery, debouncedSearchFetch]);
 
   const filterOptions = useMemo(() => getFilterOptions(documents), [documents]);
   const filteredDocuments = useMemo(
