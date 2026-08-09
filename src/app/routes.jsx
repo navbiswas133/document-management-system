@@ -1,14 +1,10 @@
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { LoginPage } from '../features/auth/LoginPage';
 import { VerifyOtpPage } from '../features/auth/VerifyOtpPage';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { DocumentsPage } from '../features/documents/DocumentsPage';
-
-function DocumentPage() {
-  const { documentId } = useParams();
-  return <h1>Document: {documentId}</h1>;
-}
+import { DocumentDetailsPage } from '../features/documents/DocumentDetailsPage';
 
 export function AppRoutes() {
   return (
@@ -20,7 +16,7 @@ export function AppRoutes() {
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/documents/upload" element={<h1>Upload Document</h1>} />
-        <Route path="/documents/:documentId" element={<DocumentPage />} />
+        <Route path="/documents/:documentId" element={<DocumentDetailsPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/admin" element={<h1>Admin</h1>} />
       </Route>

@@ -125,6 +125,24 @@
   border-radius: var(--radius);
 }
 
+.actionLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease;
+}
+
+.actionLink:hover {
+  border-color: var(--text-light);
+}
+
 .actionButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;

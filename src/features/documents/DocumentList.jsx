@@ -57,14 +57,13 @@ export function DocumentList({ documents = [] }) {
                 </td>
                 <td data-label="Actions">
                   <div className={styles.actions}>
-                    <button
-                      type="button"
-                      className={styles.actionButton}
+                    <Link
+                      to={`/documents/${doc.id}`}
+                      className={styles.actionLink}
                       aria-label={`View ${doc.name}`}
-                      disabled
                     >
                       View
-                    </button>
+                    </Link>
                     <button
                       type="button"
                       className={styles.actionButton}
