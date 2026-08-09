@@ -1,4 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { logout } from '../../store/authSlice';
 import styles from './Sidebar.module.css';
 
 const links = [
@@ -68,6 +70,15 @@ export function Sidebar({
   onClose,
   onToggleCollapse,
 }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    dispatch(logout());
+    onClose();
+    navigate('/login');
+  }
+
   return (
     <>
       {isOpen && (
@@ -116,16 +127,16 @@ export function Sidebar({
         </nav>
 
         <div className={styles.footer}>
-          <NavLink
-            to="/login"
+          <button
+            type="button"
             className={styles.logout}
             title={isCollapsed ? 'Logout' : undefined}
             aria-label="Logout"
-            onClick={onClose}
+            onClick={handleLogout}
           >
             <NavIcon name="logout" />
             <span className={styles.logoutLabel}>Logout</span>
-          </NavLink>
+          </button>
         </div>
         </aside>
 

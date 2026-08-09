@@ -1,5 +1,7 @@
 import api from '../../lib/axios';
 
+import { getAuthToken } from '../auth/authStorage';
+
 export const DEFAULT_SEARCH_REQUEST_BODY = {
   major_head: '',
   minor_head: '',
@@ -16,7 +18,7 @@ export const DEFAULT_SEARCH_REQUEST_BODY = {
 };
 
 export function getDocumentApiToken() {
-  return null;
+  return getAuthToken();
 }
 
 export function searchDocuments(requestBody = DEFAULT_SEARCH_REQUEST_BODY, token) {

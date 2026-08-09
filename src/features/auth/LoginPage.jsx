@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { getApiErrorMessage } from '../../lib/apiResponse';
+import { setCredentials } from '../../store/authSlice';
 import { generateOTP, validateOTP } from './authApi';
 import { loginSchema } from './loginSchema';
 import { verifyOtpSchema } from './verifyOtpSchema';
@@ -9,20 +12,6 @@ import styles from './LoginPage.module.css';
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 45;
-
-function getApiErrorMessage(error, fallback) {
-  const data = error.response?.data;
-
-  if (typeof data === 'string' && data.trim()) {
-    return data;
-  }
-
-  if (data?.message?.trim()) {
-    return data.message;
-  }
-
-  return fallback;
-}
 
 function formatCountdown(seconds) {
   const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -137,6 +126,8 @@ function OtpStep({
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
   const otpRefs = useRef([]);
 
   const [mobileNumber, setMobileNumber] = useState('');
@@ -158,6 +149,12 @@ export function LoginPage() {
   });
 
   const mobileField = register('mobile');
+
+  useEffect(() => {
+    if (token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [token, navigate]);
 
   useEffect(() => {
     if (!showOtpStep || resendSeconds <= 0) {
@@ -283,7 +280,15 @@ export function LoginPage() {
     setIsVerifying(true);
 
     try {
-      await validateOTP(mobileNumber, otp);
+      const authData = await validateOTP(mobileNumber, otp);
+      dispatch(
+        setCredentials({
+          token: authData.token,
+          user_id: authData.user_id,
+          user_name: authData.user_name,
+          roles: authData.roles ?? [],
+        }),
+      );
       navigate('/dashboard');
     } catch (error) {
       setApiError(

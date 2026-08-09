@@ -1,7 +1,24 @@
-import { dashboardUser } from '../../features/dashboard/placeholderDashboardData';
+import { useDispatch, useSelector } from 'react-redux';
 import styles from './Header.module.css';
 
+function getUserInitials(name) {
+  if (!name?.trim()) {
+    return '?';
+  }
+
+  const parts = name.trim().split(/\s+/);
+
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+
+  return name.slice(0, 2).toUpperCase();
+}
+
 export function Header() {
+  const userName = useSelector((state) => state.auth.user_name);
+  const initials = getUserInitials(userName);
+
   return (
     <header className={styles.header}>
       <div className={styles.searchWrap}>
@@ -26,8 +43,8 @@ export function Header() {
         </button>
 
         <button type="button" className={styles.profileButton} aria-label="User menu">
-          <span className={styles.avatar}>{dashboardUser.initials}</span>
-          <span className={styles.profileName}>{dashboardUser.name}</span>
+          <span className={styles.avatar}>{initials}</span>
+          <span className={styles.profileName}>{userName}</span>
           <svg className={styles.chevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>

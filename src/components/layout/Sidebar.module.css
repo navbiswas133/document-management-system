@@ -200,11 +200,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   padding: 8px 10px;
   color: var(--text);
   font-size: 0.8125rem;
   font-weight: 600;
   text-decoration: none;
+  background: transparent;
+  border: none;
   border-radius: 8px;
   transition: color 0.15s ease, background-color 0.15s ease, padding 0.2s ease;
 }
