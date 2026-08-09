@@ -8,9 +8,13 @@ const EMPTY_FORM = {
 
 function validateForm(form) {
   const errors = {};
+  const trimmedUsername = form.username.trim();
 
-  if (!form.username.trim()) {
-    errors.username = 'Username is required.';
+  if (!trimmedUsername) {
+    errors.username =
+      form.username.length > 0
+        ? 'Username cannot be only spaces.'
+        : 'Username is required.';
   }
 
   if (!form.password) {
@@ -53,6 +57,7 @@ export function AdminUserCreationPage() {
       return;
     }
 
+    setForm(EMPTY_FORM);
     setSuccessMessage(
       'Form validation passed. User creation is not connected to the API yet.',
     );
@@ -84,6 +89,7 @@ export function AdminUserCreationPage() {
               id="username"
               name="username"
               type="text"
+              autoComplete="username"
               className={fieldClassName(
                 styles.input,
                 styles.fieldError,
@@ -114,6 +120,7 @@ export function AdminUserCreationPage() {
               id="password"
               name="password"
               type="password"
+              autoComplete="new-password"
               className={fieldClassName(
                 styles.input,
                 styles.fieldError,
@@ -142,7 +149,11 @@ export function AdminUserCreationPage() {
         </section>
 
         {successMessage && (
-          <p className={styles.successMessage} role="status">
+          <p
+            className={styles.successMessage}
+            role="status"
+            aria-live="polite"
+          >
             {successMessage}
           </p>
         )}

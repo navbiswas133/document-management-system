@@ -117,6 +117,11 @@
   opacity: 0.9;
 }
 
+.submitButton:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .successMessage {
   margin: 0;
   padding: var(--space-md);
@@ -134,5 +139,12 @@
 
   .section {
     max-width: 480px;
+  }
+}
+
+@media (max-width: 639px) {
+  .submitButton {
+    align-self: stretch;
+    width: 100%;
   }
 }
