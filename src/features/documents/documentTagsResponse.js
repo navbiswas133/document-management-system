@@ -6,6 +6,13 @@ export function parseDocumentTagsResponse(responseData) {
   }
 
   return data
-    .map((item) => (typeof item === 'string' ? item : item?.tag_name))
+    .map((item) => {
+      if (typeof item === 'string') {
+        return item;
+      }
+
+      return item?.label ?? item?.tag_name ?? '';
+    })
+    .map((tag) => tag.trim())
     .filter(Boolean);
 }

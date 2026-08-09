@@ -1,3 +1,15 @@
+export function getResponseSuccessMessage(data, fallback) {
+  if (data?.message?.trim()) {
+    return data.message;
+  }
+
+  if (typeof data?.data === 'string' && data.data.trim()) {
+    return data.data;
+  }
+
+  return fallback;
+}
+
 export function getResponseErrorMessage(data, fallback) {
   if (typeof data === 'string' && data.trim()) {
     return data;

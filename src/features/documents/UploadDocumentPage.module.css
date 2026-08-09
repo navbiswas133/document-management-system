@@ -135,6 +135,10 @@
   min-height: 96px;
 }
 
+.tagFieldWrap {
+  position: relative;
+}
+
 .tagsField {
   display: flex;
   flex-wrap: wrap;
@@ -145,6 +149,7 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
+  cursor: text;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -154,13 +159,13 @@
   background: var(--surface);
 }
 
-.tagList {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
+.tagsFieldError {
+  border-color: var(--danger);
+}
+
+.tagsFieldError:focus-within {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }
 
 .tagInput {
@@ -181,27 +186,46 @@
   font-weight: 500;
 }
 
-.tagSuggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 6px 0 0;
-  padding: 0;
+.tagDropdownList {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
   list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-.tagSuggestionButton {
-  padding: 4px 10px;
-  color: var(--primary);
+.tagDropdownOption {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--text);
   font-size: 0.75rem;
   font-weight: 600;
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
-  border-radius: 999px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
 }
 
-.tagSuggestionButton:hover:not(:disabled) {
-  background: #e0e7ff;
+.tagDropdownOption:hover:not(:disabled) {
+  background: #eef2ff;
+  color: var(--primary);
+}
+
+.tagDropdownEmpty {
+  padding: 8px 10px;
+  color: var(--text-light);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .fieldHint {
@@ -209,32 +233,6 @@
   color: var(--text-light);
   font-size: 0.75rem;
   font-weight: 500;
-}
-
-.tagsField .selectWrap {
-  flex-shrink: 0;
-  width: 28px;
-  margin-left: auto;
-}
-
-.tagsField .select {
-  min-height: 28px;
-  padding: 0 28px 0 4px;
-  font-size: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.tagsField .select:hover,
-.tagsField .select:focus-visible {
-  border: none;
-  box-shadow: none;
-  background: transparent;
-}
-
-.tagsField .selectChevron {
-  right: 4px;
 }
 
 .tagChip {
@@ -506,6 +504,17 @@
   font-weight: 500;
   background: #eef2ff;
   border: 1px solid #c7d2fe;
+  border-radius: 8px;
+}
+
+.successNote {
+  margin: 0;
+  padding: 10px 12px;
+  color: #166534;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
   border-radius: 8px;
 }
 

@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import debounce from 'lodash/debounce';
-import { getApiErrorMessage } from '../../lib/apiResponse';
-import { fetchDocumentTags, uploadDocumentEntry } from './documentsApi';
+import { getApiErrorMessage, getResponseSuccessMessage } from '../../lib/apiResponse';
+import { fetchDocumentTags, saveDocumentEntry } from './documentsApi';
 import { formatDateForApi } from './searchFilters';
 import {
   getDefaultMinorHead,
@@ -13,14 +12,44 @@ import {
 } from './uploadCategories';
 import styles from './UploadDocumentPage.module.css';
 
-const ACCEPTED_FILE_TYPES = [
+const ALLOWED_FILE_MIME_TYPES = new Set([
   'application/pdf',
   'image/jpeg',
-  'image/jpg',
   'image/png',
-];
+]);
+const ALLOWED_FILE_EXTENSION = /\.(pdf|jpe?g|png)$/i;
+const FILE_INPUT_ACCEPT = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const TAG_SEARCH_DEBOUNCE_MS = 300;
+
+function isAllowedUploadFile(file) {
+  if (!file) {
+    return false;
+  }
+
+  const mimeType = file.type.toLowerCase();
+
+  if (ALLOWED_FILE_MIME_TYPES.has(mimeType)) {
+    return true;
+  }
+
+  return ALLOWED_FILE_EXTENSION.test(file.name);
+}
+
+function getUploadFileError(file) {
+  if (!file) {
+    return 'Please select a file to upload.';
+  }
+
+  if (!isAllowedUploadFile(file)) {
+    return 'Only PDF and image files (JPG, PNG) are allowed.';
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return 'File must be 10MB or smaller.';
+  }
+
+  return '';
+}
 
 const EMPTY_FORM = {
   majorHead: 'Personal',
@@ -41,7 +70,11 @@ function getFileKind(file) {
     return 'pdf';
   }
 
-  if (file.type.startsWith('image/')) {
+  if (
+    file.type === 'image/jpeg' ||
+    file.type === 'image/png' ||
+    /\.(jpe?g|png)$/i.test(file.name)
+  ) {
     return 'image';
   }
 
@@ -72,15 +105,10 @@ function FileKindIcon({ kind }) {
 function validateForm(form, file) {
   const errors = {};
 
-  if (!file) {
-    errors.file = 'Please select a file to upload.';
-  } else if (
-    !ACCEPTED_FILE_TYPES.includes(file.type) &&
-    !file.name.match(/\.(pdf|jpg|jpeg|png)$/i)
-  ) {
-    errors.file = 'Only PDF and image files (JPG, PNG) are allowed.';
-  } else if (file.size > MAX_FILE_SIZE) {
-    errors.file = 'File must be 10MB or smaller.';
+  const fileError = getUploadFileError(file);
+
+  if (fileError) {
+    errors.file = fileError;
   }
 
   if (!form.majorHead.trim()) {
@@ -95,6 +123,10 @@ function validateForm(form, file) {
     errors.documentDate = 'Date is required.';
   }
 
+  if (form.tags.length === 0) {
+    errors.tags = 'Please enter atleast 1 File Tag Name.';
+  }
+
   return errors;
 }
 
@@ -107,45 +139,39 @@ export function UploadDocumentPage() {
   const userId = useSelector((state) => state.auth.user_id);
 
   const fileInputRef = useRef(null);
+  const tagInputRef = useRef(null);
+  const tagFieldRef = useRef(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusType, setStatusType] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [existingTags, setExistingTags] = useState([]);
   const [tagsError, setTagsError] = useState('');
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+  const [showTagList, setShowTagList] = useState(false);
 
   const minorHeadOptions = getMinorHeadOptions(form.majorHead);
   const minorHeadLabel = getMinorHeadLabel(form.majorHead);
 
-  const debouncedTagSearch = useMemo(
-    () =>
-      debounce(async (term) => {
-        try {
-          const tags = await fetchDocumentTags(term);
-          setExistingTags(tags);
-          setTagsError('');
-        } catch (error) {
-          setTagsError(getApiErrorMessage(error, 'Unable to load tags.'));
-        }
-      }, TAG_SEARCH_DEBOUNCE_MS),
-    [],
-  );
+  async function loadDocumentTags(term = '') {
+    setIsLoadingTags(true);
 
-  useEffect(() => {
-    debouncedTagSearch('');
-    return () => debouncedTagSearch.cancel();
-  }, [debouncedTagSearch]);
-
-  useEffect(() => {
-    if (tagInput.trim()) {
-      debouncedTagSearch(tagInput.trim());
+    try {
+      const tags = await fetchDocumentTags(term);
+      setExistingTags(tags);
+      setTagsError('');
+    } catch (error) {
+      setTagsError(getApiErrorMessage(error, 'Unable to load tags.'));
+    } finally {
+      setIsLoadingTags(false);
     }
-  }, [tagInput, debouncedTagSearch]);
+  }
 
-  const tagSuggestions = useMemo(() => {
+  const tagListOptions = useMemo(() => {
     const query = tagInput.trim().toLowerCase();
 
     return existingTags.filter((tag) => {
@@ -161,9 +187,28 @@ export function UploadDocumentPage() {
     });
   }, [existingTags, form.tags, tagInput]);
 
+  function handleTagFieldFocus() {
+    setShowTagList(true);
+    loadDocumentTags(tagInput.trim());
+  }
+
+  function handleTagFieldBlur(event) {
+    if (tagFieldRef.current?.contains(event.relatedTarget)) {
+      return;
+    }
+
+    setShowTagList(false);
+  }
+
+  function handleSelectTag(tag) {
+    handleAddTag(tag);
+    tagInputRef.current?.focus();
+  }
+
   function handleFieldChange(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
     setStatusMessage('');
+    setStatusType('');
 
     if (errors[field]) {
       setErrors((current) => {
@@ -181,6 +226,7 @@ export function UploadDocumentPage() {
       minorHead: getDefaultMinorHead(value),
     }));
     setStatusMessage('');
+    setStatusType('');
 
     if (errors.majorHead || errors.minorHead) {
       setErrors((current) => {
@@ -205,6 +251,15 @@ export function UploadDocumentPage() {
     }));
     setTagInput('');
     setStatusMessage('');
+    setStatusType('');
+
+    if (errors.tags) {
+      setErrors((current) => {
+        const next = { ...current };
+        delete next.tags;
+        return next;
+      });
+    }
   }
 
   function handleRemoveTag(tag) {
@@ -219,11 +274,47 @@ export function UploadDocumentPage() {
       event.preventDefault();
       handleAddTag(tagInput);
     }
+
+    if (event.key === 'Escape') {
+      setShowTagList(false);
+    }
   }
 
   function assignFile(selectedFile) {
+    if (!selectedFile) {
+      setFile(null);
+      setStatusMessage('');
+      setStatusType('');
+
+      if (errors.file) {
+        setErrors((current) => {
+          const next = { ...current };
+          delete next.file;
+          return next;
+        });
+      }
+
+      return;
+    }
+
+    const fileError = getUploadFileError(selectedFile);
+
+    if (fileError) {
+      setFile(null);
+      setStatusMessage('');
+      setStatusType('');
+      setErrors((current) => ({ ...current, file: fileError }));
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      return;
+    }
+
     setFile(selectedFile);
     setStatusMessage('');
+    setStatusType('');
 
     if (errors.file) {
       setErrors((current) => {
@@ -245,6 +336,7 @@ export function UploadDocumentPage() {
   function handleRemoveFile() {
     setFile(null);
     setStatusMessage('');
+    setStatusType('');
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -296,6 +388,22 @@ export function UploadDocumentPage() {
     setFile(null);
     setErrors({});
     setStatusMessage('');
+    setStatusType('');
+    setTagInput('');
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
+
+  function resetFormAfterSuccess() {
+    setForm({
+      ...EMPTY_FORM,
+      minorHead: getDefaultMinorHead(EMPTY_FORM.majorHead),
+      tags: [],
+    });
+    setFile(null);
+    setErrors({});
     setTagInput('');
 
     if (fileInputRef.current) {
@@ -309,6 +417,7 @@ export function UploadDocumentPage() {
     const nextErrors = validateForm(form, file);
     setErrors(nextErrors);
     setStatusMessage('');
+    setStatusType('');
 
     if (Object.keys(nextErrors).length > 0) {
       return;
@@ -316,13 +425,14 @@ export function UploadDocumentPage() {
 
     if (!userId) {
       setStatusMessage('Authentication required. Please log in again.');
+      setStatusType('error');
       return;
     }
 
     setIsUploading(true);
 
     try {
-      await uploadDocumentEntry({
+      const response = await saveDocumentEntry({
         file,
         majorHead: form.majorHead,
         minorHead: form.minorHead,
@@ -332,11 +442,17 @@ export function UploadDocumentPage() {
         userId,
       });
 
+      resetFormAfterSuccess();
+      setStatusMessage(
+        getResponseSuccessMessage(response, 'Document uploaded successfully.'),
+      );
+      setStatusType('success');
       navigate('/documents');
     } catch (uploadError) {
       setStatusMessage(
         getApiErrorMessage(uploadError, 'Unable to upload document. Please try again.'),
       );
+      setStatusType('error');
     } finally {
       setIsUploading(false);
     }
@@ -455,17 +571,28 @@ export function UploadDocumentPage() {
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="tag-input">
-              Tags
+              Tags <span className={styles.required}>*</span>
             </label>
-            <div className={styles.tagsField}>
-              <div className={styles.tagList}>
+
+            <div className={styles.tagFieldWrap} ref={tagFieldRef}>
+              <div
+                className={fieldClassName(
+                  styles.tagsField,
+                  styles.tagsFieldError,
+                  Boolean(errors.tags),
+                )}
+                onClick={() => tagInputRef.current?.focus()}
+              >
                 {form.tags.map((tag) => (
                   <span key={tag} className={styles.tagChip}>
                     {tag}
                     <button
                       type="button"
                       className={styles.tagRemove}
-                      onClick={() => handleRemoveTag(tag)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleRemoveTag(tag);
+                      }}
                       disabled={isUploading}
                       aria-label={`Remove tag ${tag}`}
                     >
@@ -477,38 +604,64 @@ export function UploadDocumentPage() {
                 ))}
                 <input
                   id="tag-input"
+                  ref={tagInputRef}
                   type="text"
                   className={styles.tagInput}
                   value={tagInput}
                   onChange={(event) => setTagInput(event.target.value)}
+                  onFocus={handleTagFieldFocus}
+                  onBlur={handleTagFieldBlur}
                   onKeyDown={handleTagInputKeyDown}
-                  placeholder="Type tag and press Enter"
+                  placeholder="Click to select or type a tag"
                   disabled={isUploading}
-                  aria-label="Add document tag"
+                  aria-invalid={Boolean(errors.tags)}
+                  aria-expanded={showTagList}
+                  aria-haspopup="listbox"
+                  aria-describedby={errors.tags ? 'tags-error' : undefined}
                 />
               </div>
+
+              {showTagList && (
+                <ul className={styles.tagDropdownList} role="listbox" aria-label="Tag suggestions">
+                  {isLoadingTags && (
+                    <li className={styles.tagDropdownEmpty}>Loading tags…</li>
+                  )}
+                  {!isLoadingTags && tagListOptions.length === 0 && (
+                    <li className={styles.tagDropdownEmpty}>
+                      {tagInput.trim()
+                        ? 'No matching tags. Press Enter to add.'
+                        : 'No tags available. Type and press Enter.'}
+                    </li>
+                  )}
+                  {!isLoadingTags &&
+                    tagListOptions.map((tag) => (
+                      <li key={tag}>
+                        <button
+                          type="button"
+                          className={styles.tagDropdownOption}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => handleSelectTag(tag)}
+                          disabled={isUploading}
+                          role="option"
+                        >
+                          {tag}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              )}
             </div>
-            {tagSuggestions.length > 0 && tagInput.trim() && (
-              <ul className={styles.tagSuggestions} aria-label="Suggested tags">
-                {tagSuggestions.slice(0, 8).map((tag) => (
-                  <li key={tag}>
-                    <button
-                      type="button"
-                      className={styles.tagSuggestionButton}
-                      onClick={() => handleAddTag(tag)}
-                      disabled={isUploading}
-                    >
-                      {tag}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+
             {tagsError && (
               <p className={styles.error}>{tagsError}</p>
             )}
+            {errors.tags && (
+              <p id="tags-error" className={styles.error}>
+                {errors.tags}
+              </p>
+            )}
             <p className={styles.fieldHint}>
-              Select existing tags or type a new tag. New tags are saved on upload.
+              Click the field to load tags, pick from the list, or type a new tag and press Enter.
             </p>
           </div>
         </div>
@@ -613,7 +766,7 @@ export function UploadDocumentPage() {
               name="file"
               type="file"
               className={styles.hiddenFileInput}
-              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+              accept={FILE_INPUT_ACCEPT}
               onChange={handleFileChange}
               disabled={isUploading}
               aria-invalid={Boolean(errors.file)}
@@ -640,7 +793,12 @@ export function UploadDocumentPage() {
         </div>
 
         {statusMessage && (
-          <p className={styles.validationNote} role="status">
+          <p
+            className={
+              statusType === 'success' ? styles.successNote : styles.validationNote
+            }
+            role={statusType === 'error' ? 'alert' : 'status'}
+          >
             {statusMessage}
           </p>
         )}

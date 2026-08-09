@@ -120,7 +120,7 @@ export async function fetchDocumentTags(term = '') {
   return parseDocumentTagsResponse(response.data);
 }
 
-export async function uploadDocumentEntry({
+export async function saveDocumentEntry({
   file,
   majorHead,
   minorHead,
