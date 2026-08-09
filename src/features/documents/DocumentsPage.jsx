@@ -2,14 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DocumentList } from './DocumentList';
 import {
-  DEFAULT_SEARCH_PARAMS,
+  DEFAULT_SEARCH_REQUEST_BODY,
   getDocumentApiToken,
   searchDocuments,
 } from './documentsApi';
-import {
-  extractDocumentEntries,
-  mapDocumentsForList,
-} from './documentMapper';
 import styles from './DocumentsPage.module.css';
 
 const EMPTY_FILTERS = {
@@ -124,23 +120,24 @@ export function DocumentsPage() {
       }
 
       try {
-        const response = await searchDocuments(DEFAULT_SEARCH_PARAMS, token);
+        const response = await searchDocuments(
+          DEFAULT_SEARCH_REQUEST_BODY,
+          token,
+        );
 
         if (!isMounted) {
           return;
         }
 
-        const entries = extractDocumentEntries(response.data);
-
-        if (entries === null) {
-          setDocuments([]);
-          setError(
-            'Unable to read documents from the API response. The response format is not documented.',
+        if (import.meta.env.DEV) {
+          console.info(
+            '[documents] searchDocumentEntry response (not mapped):',
+            response.data,
           );
-          return;
         }
 
-        setDocuments(mapDocumentsForList(entries));
+        // Response structure is undocumented — do not map into list fields yet.
+        setDocuments([]);
       } catch (loadError) {
         if (!isMounted) {
           return;

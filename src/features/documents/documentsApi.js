@@ -1,6 +1,6 @@
 import api from '../../lib/axios';
 
-export const DEFAULT_SEARCH_PARAMS = {
+export const DEFAULT_SEARCH_REQUEST_BODY = {
   major_head: '',
   minor_head: '',
   from_date: '',
@@ -19,12 +19,16 @@ export function getDocumentApiToken() {
   return null;
 }
 
-export function searchDocuments(params = DEFAULT_SEARCH_PARAMS, token) {
-  const headers = {};
-
-  if (token) {
-    headers.token = token;
+export function searchDocuments(requestBody = DEFAULT_SEARCH_REQUEST_BODY, token) {
+  if (!token) {
+    return Promise.reject(
+      new Error('Document search requires a token header.'),
+    );
   }
 
-  return api.post('/searchDocumentEntry', params, { headers });
+  return api.post('/searchDocumentEntry', requestBody, {
+    headers: {
+      token,
+    },
+  });
 }
