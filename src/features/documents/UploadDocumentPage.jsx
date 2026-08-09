@@ -1,26 +1,34 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import debounce from 'lodash/debounce';
+import { getApiErrorMessage } from '../../lib/apiResponse';
+import { fetchDocumentTags, uploadDocumentEntry } from './documentsApi';
+import { formatDateForApi } from './searchFilters';
+import {
+  getDefaultMinorHead,
+  getMinorHeadLabel,
+  getMinorHeadOptions,
+  MAJOR_HEAD_OPTIONS,
+} from './uploadCategories';
 import styles from './UploadDocumentPage.module.css';
-
-const MAJOR_HEAD_OPTIONS = ['Personal', 'Professional'];
-const MINOR_HEAD_OPTIONS = ['John', 'IT', 'Accounts', 'Legal'];
-const TAG_OPTIONS = ['important', 'identity', 'personal', 'invoice', 'project', 'tax'];
-
-const DEFAULT_FORM = {
-  majorHead: 'Personal',
-  minorHead: 'John',
-  documentDate: '2024-05-16',
-  remarks: 'Passport copy for verification.',
-  tags: ['important', 'identity', 'personal'],
-};
 
 const ACCEPTED_FILE_TYPES = [
   'application/pdf',
   'image/jpeg',
   'image/jpg',
   'image/png',
-  'image/webp',
 ];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const TAG_SEARCH_DEBOUNCE_MS = 300;
+
+const EMPTY_FORM = {
+  majorHead: 'Personal',
+  minorHead: getDefaultMinorHead('Personal'),
+  documentDate: '',
+  remarks: '',
+  tags: [],
+};
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -68,9 +76,9 @@ function validateForm(form, file) {
     errors.file = 'Please select a file to upload.';
   } else if (
     !ACCEPTED_FILE_TYPES.includes(file.type) &&
-    !file.name.match(/\.(pdf|jpg|jpeg|png|webp)$/i)
+    !file.name.match(/\.(pdf|jpg|jpeg|png)$/i)
   ) {
-    errors.file = 'Only PDF and image files are allowed.';
+    errors.file = 'Only PDF and image files (JPG, PNG) are allowed.';
   } else if (file.size > MAX_FILE_SIZE) {
     errors.file = 'File must be 10MB or smaller.';
   }
@@ -80,7 +88,7 @@ function validateForm(form, file) {
   }
 
   if (!form.minorHead.trim()) {
-    errors.minorHead = 'Name is required.';
+    errors.minorHead = `${getMinorHeadLabel(form.majorHead)} is required.`;
   }
 
   if (!form.documentDate) {
@@ -95,16 +103,67 @@ function fieldClassName(baseClass, errorClass, hasError) {
 }
 
 export function UploadDocumentPage() {
+  const navigate = useNavigate();
+  const userId = useSelector((state) => state.auth.user_id);
+
   const fileInputRef = useRef(null);
-  const [form, setForm] = useState(DEFAULT_FORM);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState(null);
   const [errors, setErrors] = useState({});
-  const [validationNote, setValidationNote] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [tagInput, setTagInput] = useState('');
+  const [existingTags, setExistingTags] = useState([]);
+  const [tagsError, setTagsError] = useState('');
+
+  const minorHeadOptions = getMinorHeadOptions(form.majorHead);
+  const minorHeadLabel = getMinorHeadLabel(form.majorHead);
+
+  const debouncedTagSearch = useMemo(
+    () =>
+      debounce(async (term) => {
+        try {
+          const tags = await fetchDocumentTags(term);
+          setExistingTags(tags);
+          setTagsError('');
+        } catch (error) {
+          setTagsError(getApiErrorMessage(error, 'Unable to load tags.'));
+        }
+      }, TAG_SEARCH_DEBOUNCE_MS),
+    [],
+  );
+
+  useEffect(() => {
+    debouncedTagSearch('');
+    return () => debouncedTagSearch.cancel();
+  }, [debouncedTagSearch]);
+
+  useEffect(() => {
+    if (tagInput.trim()) {
+      debouncedTagSearch(tagInput.trim());
+    }
+  }, [tagInput, debouncedTagSearch]);
+
+  const tagSuggestions = useMemo(() => {
+    const query = tagInput.trim().toLowerCase();
+
+    return existingTags.filter((tag) => {
+      if (form.tags.includes(tag)) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      return tag.toLowerCase().includes(query);
+    });
+  }, [existingTags, form.tags, tagInput]);
 
   function handleFieldChange(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
-    setValidationNote('');
+    setStatusMessage('');
 
     if (errors[field]) {
       setErrors((current) => {
@@ -115,14 +174,37 @@ export function UploadDocumentPage() {
     }
   }
 
+  function handleMajorHeadChange(value) {
+    setForm((current) => ({
+      ...current,
+      majorHead: value,
+      minorHead: getDefaultMinorHead(value),
+    }));
+    setStatusMessage('');
+
+    if (errors.majorHead || errors.minorHead) {
+      setErrors((current) => {
+        const next = { ...current };
+        delete next.majorHead;
+        delete next.minorHead;
+        return next;
+      });
+    }
+  }
+
   function handleAddTag(tag) {
-    if (!tag || form.tags.includes(tag)) return;
+    const normalizedTag = tag.trim();
+
+    if (!normalizedTag || form.tags.includes(normalizedTag)) {
+      return;
+    }
 
     setForm((current) => ({
       ...current,
-      tags: [...current.tags, tag],
+      tags: [...current.tags, normalizedTag],
     }));
-    setValidationNote('');
+    setTagInput('');
+    setStatusMessage('');
   }
 
   function handleRemoveTag(tag) {
@@ -132,9 +214,16 @@ export function UploadDocumentPage() {
     }));
   }
 
+  function handleTagInputKeyDown(event) {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      handleAddTag(tagInput);
+    }
+  }
+
   function assignFile(selectedFile) {
     setFile(selectedFile);
-    setValidationNote('');
+    setStatusMessage('');
 
     if (errors.file) {
       setErrors((current) => {
@@ -155,7 +244,7 @@ export function UploadDocumentPage() {
 
   function handleRemoveFile() {
     setFile(null);
-    setValidationNote('');
+    setStatusMessage('');
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -199,33 +288,59 @@ export function UploadDocumentPage() {
   }
 
   function handleClear() {
-    setForm({ ...DEFAULT_FORM, tags: [...DEFAULT_FORM.tags] });
+    setForm({
+      ...EMPTY_FORM,
+      minorHead: getDefaultMinorHead(EMPTY_FORM.majorHead),
+      tags: [],
+    });
     setFile(null);
     setErrors({});
-    setValidationNote('');
+    setStatusMessage('');
+    setTagInput('');
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const nextErrors = validateForm(form, file);
     setErrors(nextErrors);
-    setValidationNote('');
+    setStatusMessage('');
 
     if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
-    setValidationNote(
-      'Form validation passed. Upload is not connected to the API yet.',
-    );
-  }
+    if (!userId) {
+      setStatusMessage('Authentication required. Please log in again.');
+      return;
+    }
 
-  const availableTags = TAG_OPTIONS.filter((tag) => !form.tags.includes(tag));
+    setIsUploading(true);
+
+    try {
+      await uploadDocumentEntry({
+        file,
+        majorHead: form.majorHead,
+        minorHead: form.minorHead,
+        documentDate: formatDateForApi(form.documentDate),
+        remarks: form.remarks.trim(),
+        tags: form.tags,
+        userId,
+      });
+
+      navigate('/documents');
+    } catch (uploadError) {
+      setStatusMessage(
+        getApiErrorMessage(uploadError, 'Unable to upload document. Please try again.'),
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -250,6 +365,7 @@ export function UploadDocumentPage() {
                 onChange={(event) =>
                   handleFieldChange('documentDate', event.target.value)
                 }
+                disabled={isUploading}
                 aria-invalid={Boolean(errors.documentDate)}
                 aria-describedby={
                   errors.documentDate ? 'document-date-error' : undefined
@@ -269,7 +385,7 @@ export function UploadDocumentPage() {
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="major-head">
-              Category (Major Head) <span className={styles.required}>*</span>
+              Category <span className={styles.required}>*</span>
             </label>
             <div className={styles.selectWrap}>
               <select
@@ -277,9 +393,8 @@ export function UploadDocumentPage() {
                 name="majorHead"
                 className={fieldClassName(styles.select, styles.fieldError, Boolean(errors.majorHead))}
                 value={form.majorHead}
-                onChange={(event) =>
-                  handleFieldChange('majorHead', event.target.value)
-                }
+                onChange={(event) => handleMajorHeadChange(event.target.value)}
+                disabled={isUploading}
                 aria-invalid={Boolean(errors.majorHead)}
                 aria-describedby={
                   errors.majorHead ? 'major-head-error' : undefined
@@ -304,7 +419,7 @@ export function UploadDocumentPage() {
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="minor-head">
-              Name (Minor Head) <span className={styles.required}>*</span>
+              {minorHeadLabel} <span className={styles.required}>*</span>
             </label>
             <div className={styles.selectWrap}>
               <select
@@ -315,12 +430,13 @@ export function UploadDocumentPage() {
                 onChange={(event) =>
                   handleFieldChange('minorHead', event.target.value)
                 }
+                disabled={isUploading}
                 aria-invalid={Boolean(errors.minorHead)}
                 aria-describedby={
                   errors.minorHead ? 'minor-head-error' : undefined
                 }
               >
-                {MINOR_HEAD_OPTIONS.map((option) => (
+                {minorHeadOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -338,7 +454,7 @@ export function UploadDocumentPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="tag-add">
+            <label className={styles.label} htmlFor="tag-input">
               Tags
             </label>
             <div className={styles.tagsField}>
@@ -350,6 +466,7 @@ export function UploadDocumentPage() {
                       type="button"
                       className={styles.tagRemove}
                       onClick={() => handleRemoveTag(tag)}
+                      disabled={isUploading}
                       aria-label={`Remove tag ${tag}`}
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -358,32 +475,41 @@ export function UploadDocumentPage() {
                     </button>
                   </span>
                 ))}
+                <input
+                  id="tag-input"
+                  type="text"
+                  className={styles.tagInput}
+                  value={tagInput}
+                  onChange={(event) => setTagInput(event.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="Type tag and press Enter"
+                  disabled={isUploading}
+                  aria-label="Add document tag"
+                />
               </div>
-              {availableTags.length > 0 && (
-                <div className={styles.selectWrap}>
-                  <select
-                    id="tag-add"
-                    className={styles.select}
-                    defaultValue=""
-                    onChange={(event) => {
-                      handleAddTag(event.target.value);
-                      event.target.value = '';
-                    }}
-                    aria-label="Add tag"
-                  >
-                    <option value=""> </option>
-                    {availableTags.map((tag) => (
-                      <option key={tag} value={tag}>
-                        {tag}
-                      </option>
-                    ))}
-                  </select>
-                  <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </div>
-              )}
             </div>
+            {tagSuggestions.length > 0 && tagInput.trim() && (
+              <ul className={styles.tagSuggestions} aria-label="Suggested tags">
+                {tagSuggestions.slice(0, 8).map((tag) => (
+                  <li key={tag}>
+                    <button
+                      type="button"
+                      className={styles.tagSuggestionButton}
+                      onClick={() => handleAddTag(tag)}
+                      disabled={isUploading}
+                    >
+                      {tag}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {tagsError && (
+              <p className={styles.error}>{tagsError}</p>
+            )}
+            <p className={styles.fieldHint}>
+              Select existing tags or type a new tag. New tags are saved on upload.
+            </p>
           </div>
         </div>
 
@@ -400,6 +526,8 @@ export function UploadDocumentPage() {
             onChange={(event) =>
               handleFieldChange('remarks', event.target.value)
             }
+            disabled={isUploading}
+            placeholder="Optional remarks"
           />
         </div>
 
@@ -436,6 +564,7 @@ export function UploadDocumentPage() {
                       event.stopPropagation();
                       handleBrowseClick();
                     }}
+                    disabled={isUploading}
                   >
                     Change
                   </button>
@@ -446,6 +575,7 @@ export function UploadDocumentPage() {
                       event.stopPropagation();
                       handleRemoveFile();
                     }}
+                    disabled={isUploading}
                   >
                     Remove
                   </button>
@@ -470,6 +600,7 @@ export function UploadDocumentPage() {
                     event.stopPropagation();
                     handleBrowseClick();
                   }}
+                  disabled={isUploading}
                 >
                   Browse File
                 </button>
@@ -482,8 +613,9 @@ export function UploadDocumentPage() {
               name="file"
               type="file"
               className={styles.hiddenFileInput}
-              accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
+              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
               onChange={handleFileChange}
+              disabled={isUploading}
               aria-invalid={Boolean(errors.file)}
               aria-describedby={errors.file ? 'document-file-error' : 'file-hint'}
             />
@@ -491,7 +623,7 @@ export function UploadDocumentPage() {
 
           <div className={styles.fileMeta}>
             <p id="file-hint" className={styles.fileHint}>
-              Only PDF and Image files are allowed (Max 10MB)
+              Only PDF and image files are allowed (JPG, PNG — max 10MB)
             </p>
             <div className={styles.fileTypes} aria-hidden="true">
               <span className={styles.fileTypeBadge}>PDF</span>
@@ -507,18 +639,27 @@ export function UploadDocumentPage() {
           )}
         </div>
 
-        {validationNote && (
+        {statusMessage && (
           <p className={styles.validationNote} role="status">
-            {validationNote}
+            {statusMessage}
           </p>
         )}
 
         <div className={styles.actions}>
-          <button type="button" className={styles.clearButton} onClick={handleClear}>
+          <button
+            type="button"
+            className={styles.clearButton}
+            onClick={handleClear}
+            disabled={isUploading}
+          >
             Clear
           </button>
-          <button type="submit" className={styles.uploadButton}>
-            Upload
+          <button
+            type="submit"
+            className={styles.uploadButton}
+            disabled={isUploading}
+          >
+            {isUploading ? 'Uploading…' : 'Upload'}
           </button>
         </div>
       </form>

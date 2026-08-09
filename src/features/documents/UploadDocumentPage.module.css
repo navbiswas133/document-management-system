@@ -157,9 +157,58 @@
 .tagList {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   flex: 1;
   min-width: 0;
+}
+
+.tagInput {
+  flex: 1 1 120px;
+  min-width: 120px;
+  min-height: 28px;
+  padding: 4px 6px;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.tagInput::placeholder {
+  color: #8b95a5;
+  font-weight: 500;
+}
+
+.tagSuggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tagSuggestionButton {
+  padding: 4px 10px;
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+}
+
+.tagSuggestionButton:hover:not(:disabled) {
+  background: #e0e7ff;
+}
+
+.fieldHint {
+  margin: 4px 0 0;
+  color: var(--text-light);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .tagsField .selectWrap {
@@ -502,10 +551,16 @@
   border: 1px solid var(--primary);
 }
 
-.uploadButton:hover {
+.uploadButton:hover:not(:disabled) {
   background: var(--primary-dark);
   border-color: var(--primary-dark);
   box-shadow: var(--shadow-elevated);
+}
+
+.uploadButton:disabled,
+.clearButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 @media (min-width: 768px) {

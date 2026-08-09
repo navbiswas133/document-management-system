@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import debounce from 'lodash/debounce';
 import { getApiErrorMessage } from '../../lib/apiResponse';
+import {
+  DocumentSearch,
+  getDefaultMajorCategories,
+  getMinorCategories,
+} from './DocumentSearch';
 import { DocumentList } from './DocumentList';
 import {
   buildSearchRequestBody,
@@ -9,42 +14,39 @@ import {
   PAGE_SIZE,
   searchDocuments,
 } from './documentsApi';
+import { formatSearchDateForApi } from './searchFilters';
 import { parseSearchDocumentResponse } from './searchDocumentResponse';
 import styles from './DocumentsPage.module.css';
 
 const EMPTY_FILTERS = {
-  category: '',
-  tag: '',
+  majorHead: '',
+  minorHead: '',
+  tag1: '',
+  tag2: '',
+  fromDate: '',
+  toDate: '',
 };
 
 const SEARCH_DEBOUNCE_MS = 400;
 
-function getFilterOptions(documents) {
-  const categories = [
-    ...new Set(documents.map((doc) => doc.category).filter(Boolean)),
-  ].sort();
-  const tags = [
-    ...new Set(
-      documents.flatMap((doc) =>
-        Array.isArray(doc.tags)
-          ? doc.tags.map((tag) =>
-              typeof tag === 'string' ? tag : tag?.tag_name,
-            ).filter(Boolean)
-          : [],
-      ),
-    ),
-  ].sort();
-
-  return { categories, tags };
+function isAbortError(error) {
+  return (
+    error?.name === 'CanceledError' ||
+    error?.name === 'AbortError' ||
+    error?.code === 'ERR_CANCELED'
+  );
 }
 
-function getRequestKey(searchValue, filterState, page) {
-  return JSON.stringify({
-    search: searchValue.trim(),
-    tag: filterState.tag,
-    category: filterState.category,
-    page,
-  });
+function hasActiveFilters(filters, searchQuery) {
+  return Boolean(
+    searchQuery.trim() ||
+      filters.majorHead ||
+      filters.minorHead ||
+      filters.tag1.trim() ||
+      filters.tag2.trim() ||
+      filters.fromDate ||
+      filters.toDate,
+  );
 }
 
 export function DocumentsPage() {
@@ -59,18 +61,19 @@ export function DocumentsPage() {
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
 
-  const lastRequestKeyRef = useRef('');
-  const skipDebouncedSearchRef = useRef(true);
+  const searchQueryRef = useRef(searchQuery);
+  searchQueryRef.current = searchQuery;
+
+  const abortControllerRef = useRef(null);
+  const skipFilterScheduleRef = useRef(true);
 
   const fetchDocuments = useCallback(async (searchValue, filterState, page) => {
-    const normalizedSearch = searchValue.trim();
-    const requestKey = getRequestKey(normalizedSearch, filterState, page);
-
-    if (requestKey === lastRequestKeyRef.current) {
-      return;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
-    lastRequestKeyRef.current = requestKey;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const token = getDocumentApiToken();
 
@@ -79,22 +82,30 @@ export function DocumentsPage() {
       setTotalCount(0);
       setApiError('Authentication required.');
       setIsLoading(false);
+      abortControllerRef.current = null;
       return;
     }
 
     setIsLoading(true);
     setApiError('');
 
+    const normalizedSearch = searchValue.trim();
     const requestBody = buildSearchRequestBody({
       searchValue: normalizedSearch,
-      tag: filterState.tag,
-      majorHead: filterState.category,
+      majorHead: filterState.majorHead,
+      minorHead: filterState.minorHead,
+      tags: [filterState.tag1.trim(), filterState.tag2.trim()],
+      fromDate: formatSearchDateForApi(filterState.fromDate),
+      toDate: formatSearchDateForApi(filterState.toDate),
       start: (page - 1) * PAGE_SIZE,
       length: PAGE_SIZE,
     });
 
     try {
-      const responseData = await searchDocuments(requestBody);
+      const responseData = await searchDocuments(requestBody, {
+        signal: controller.signal,
+      });
+
       const { documents: entries, total } = parseSearchDocumentResponse(
         responseData,
       );
@@ -103,52 +114,92 @@ export function DocumentsPage() {
       setTotalCount(total);
       setCurrentPage(page);
     } catch (loadError) {
+      if (isAbortError(loadError)) {
+        return;
+      }
+
       setDocuments([]);
       setTotalCount(0);
       setApiError(
         getApiErrorMessage(loadError, 'Unable to load documents. Please try again.'),
       );
     } finally {
-      setIsLoading(false);
+      if (abortControllerRef.current === controller) {
+        setIsLoading(false);
+        abortControllerRef.current = null;
+      }
     }
   }, []);
 
-  const debouncedSearchFetch = useMemo(
+  const debouncedListFetch = useMemo(
     () =>
-      debounce((searchValue) => {
-        lastRequestKeyRef.current = '';
-        setCurrentPage(1);
-        fetchDocuments(searchValue, filtersRef.current, 1);
+      debounce(() => {
+        fetchDocuments(searchQueryRef.current, filtersRef.current, 1);
       }, SEARCH_DEBOUNCE_MS),
     [fetchDocuments],
   );
 
   useEffect(() => {
+    fetchDocuments(searchQueryRef.current, filtersRef.current, 1);
+
+    const enableFilterScheduleTimer = setTimeout(() => {
+      skipFilterScheduleRef.current = false;
+    }, 0);
+
     return () => {
-      debouncedSearchFetch.cancel();
+      clearTimeout(enableFilterScheduleTimer);
     };
-  }, [debouncedSearchFetch]);
+  }, [fetchDocuments]);
 
   useEffect(() => {
-    lastRequestKeyRef.current = '';
-    setCurrentPage(1);
-    fetchDocuments(searchQuery, filters, 1);
-  }, [filters.tag, filters.category, fetchDocuments]);
-
-  useEffect(() => {
-    if (skipDebouncedSearchRef.current) {
-      skipDebouncedSearchRef.current = false;
+    if (skipFilterScheduleRef.current) {
       return;
     }
 
-    debouncedSearchFetch(searchQuery);
-  }, [searchQuery, debouncedSearchFetch]);
+    setCurrentPage(1);
+    debouncedListFetch();
+  }, [
+    searchQuery,
+    filters.majorHead,
+    filters.minorHead,
+    filters.fromDate,
+    filters.toDate,
+    filters.tag1,
+    filters.tag2,
+    debouncedListFetch,
+  ]);
 
-  const filterOptions = useMemo(() => getFilterOptions(documents), [documents]);
-  const filtersActive = Boolean(filters.category || filters.tag);
+  useEffect(() => {
+    return () => {
+      debouncedListFetch.cancel();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [debouncedListFetch]);
+
+  const majorCategoryOptions = useMemo(
+    () => getDefaultMajorCategories(documents),
+    [documents],
+  );
+
+  const minorCategoryOptions = useMemo(
+    () => getMinorCategories(documents, filters.majorHead),
+    [documents, filters.majorHead],
+  );
+
+  const filtersActive = hasActiveFilters(filters, searchQuery);
 
   function handleFilterChange(field, value) {
-    setFilters((current) => ({ ...current, [field]: value }));
+    setFilters((current) => {
+      const next = { ...current, [field]: value };
+
+      if (field === 'majorHead' && value !== current.majorHead) {
+        next.minorHead = '';
+      }
+
+      return next;
+    });
   }
 
   function handleClearFilters() {
@@ -167,6 +218,7 @@ export function DocumentsPage() {
       return;
     }
 
+    debouncedListFetch.cancel();
     fetchDocuments(searchQuery, filters, page);
   }
 
@@ -208,91 +260,16 @@ export function DocumentsPage() {
         </div>
       </header>
 
-      <section className={styles.filtersPanel} aria-label="Document filters">
-        <div className={styles.filtersRow}>
-          <div className={styles.searchField}>
-            <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-              <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <input
-              type="search"
-              className={styles.searchInput}
-              placeholder="Search by name, category, tag…"
-              aria-label="Search documents"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className={styles.filterField}>
-            <label className={styles.filterLabel} htmlFor="filter-category">
-              Category
-            </label>
-            <div className={styles.selectWrap}>
-              <select
-                id="filter-category"
-                className={styles.filterSelect}
-                value={filters.category}
-                onChange={(event) => handleFilterChange('category', event.target.value)}
-                disabled={isLoading}
-              >
-                <option value="">All categories</option>
-                {filterOptions.categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
-          </div>
-
-          <div className={styles.filterField}>
-            <label className={styles.filterLabel} htmlFor="filter-tag">
-              Tag
-            </label>
-            <div className={styles.selectWrap}>
-              <select
-                id="filter-tag"
-                className={styles.filterSelect}
-                value={filters.tag}
-                onChange={(event) => handleFilterChange('tag', event.target.value)}
-                disabled={isLoading}
-              >
-                <option value="">All tags</option>
-                {filterOptions.tags.map((tag) => (
-                  <option key={tag} value={tag}>
-                    {tag}
-                  </option>
-                ))}
-              </select>
-              <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
-          </div>
-
-          {(filtersActive || searchQuery.trim()) && (
-            <div className={styles.filterActions}>
-              <button
-                type="button"
-                className={styles.clearFiltersButton}
-                onClick={handleClearFilters}
-                disabled={isLoading}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                Clear
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+      <DocumentSearch
+        searchQuery={searchQuery}
+        filters={filters}
+        majorCategoryOptions={majorCategoryOptions}
+        minorCategoryOptions={minorCategoryOptions}
+        filtersActive={filtersActive}
+        onSearchChange={setSearchQuery}
+        onFilterChange={handleFilterChange}
+        onClear={handleClearFilters}
+      />
 
       {apiError && (
         <p className={styles.apiNotice} role="alert">
