@@ -9,7 +9,7 @@
 }
 
 .menuButton {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
@@ -149,10 +149,6 @@
 }
 
 @media (max-width: 768px) {
-  .menuButton {
-    display: flex;
-  }
-
   .searchWrap {
     max-width: none;
   }

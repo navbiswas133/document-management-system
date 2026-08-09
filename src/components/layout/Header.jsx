@@ -1,14 +1,15 @@
 import { dashboardUser } from '../../features/dashboard/placeholderDashboardData';
 import styles from './Header.module.css';
 
-export function Header({ onMenuClick }) {
+export function Header({ onMenuClick, isSidebarCollapsed, isMobileMenuOpen, menuAriaLabel }) {
   return (
     <header className={styles.header}>
       <button
         type="button"
         className={styles.menuButton}
         onClick={onMenuClick}
-        aria-label="Toggle navigation menu"
+        aria-label={menuAriaLabel}
+        aria-expanded={isMobileMenuOpen || !isSidebarCollapsed}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

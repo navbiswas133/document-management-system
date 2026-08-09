@@ -45,12 +45,29 @@ function NavIcon({ name }) {
           <path d="M10 17l-5-5 5-5M5 12h12M15 7V5a2 2 0 012-2h3v16h-3a2 2 0 01-2-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
+    case 'chevronLeft':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'chevronRight':
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
     default:
       return null;
   }
 }
 
-export function Sidebar({ isOpen, onClose }) {
+export function Sidebar({
+  isOpen,
+  isCollapsed,
+  onClose,
+  onToggleCollapse,
+}) {
   return (
     <>
       {isOpen && (
@@ -62,11 +79,14 @@ export function Sidebar({ isOpen, onClose }) {
         />
       )}
 
-      <aside
-        className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}
-        aria-label="Main navigation"
+      <div
+        className={`${styles.sidebarShell} ${isCollapsed ? styles.sidebarShellCollapsed : ''}`}
       >
-        <div className={styles.brand}>
+        <aside
+          className={`${styles.sidebar} ${isOpen ? styles.open : ''} ${isCollapsed ? styles.collapsed : ''}`}
+          aria-label="Main navigation"
+        >
+          <div className={styles.brand}>
           <div className={styles.brandLogo} aria-hidden="true" />
           <div className={styles.brandText}>
             <p className={styles.brandTitle}>DMS</p>
@@ -77,9 +97,11 @@ export function Sidebar({ isOpen, onClose }) {
         <nav className={styles.nav}>
           {links.map((link) => (
             <NavLink
-              key={link.to}
+              key={`${link.to}-${link.label}`}
               to={link.to}
               end={link.end}
+              title={isCollapsed ? link.label : undefined}
+              aria-label={link.label}
               className={({ isActive }) =>
                 isActive ? `${styles.link} ${styles.linkActive}` : styles.link
               }
@@ -94,12 +116,28 @@ export function Sidebar({ isOpen, onClose }) {
         </nav>
 
         <div className={styles.footer}>
-          <NavLink to="/login" className={styles.logout} onClick={onClose}>
+          <NavLink
+            to="/login"
+            className={styles.logout}
+            title={isCollapsed ? 'Logout' : undefined}
+            aria-label="Logout"
+            onClick={onClose}
+          >
             <NavIcon name="logout" />
-            <span>Logout</span>
+            <span className={styles.logoutLabel}>Logout</span>
           </NavLink>
         </div>
-      </aside>
+        </aside>
+
+        <button
+          type="button"
+          className={styles.collapseButton}
+          onClick={onToggleCollapse}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <NavIcon name={isCollapsed ? 'chevronRight' : 'chevronLeft'} />
+        </button>
+      </div>
     </>
   );
 }
