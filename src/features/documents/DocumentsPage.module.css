@@ -60,6 +60,12 @@
   gap: var(--space-sm);
 }
 
+.toolbarRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
 .searchWrapper {
   position: relative;
   flex: 1;
@@ -136,12 +142,23 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.filterButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.filterButton:hover {
+  border-color: var(--text-light);
+}
+
+.filterButtonActive {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+
+.filterBadge {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
 }
 
 .filterIcon {
@@ -149,6 +166,67 @@
   height: 10px;
   border-top: 2px solid var(--text-light);
   border-bottom: 2px solid var(--text-light);
+}
+
+.filterPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.filterFields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.filterLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.filterSelect {
+  width: 100%;
+  padding: 10px var(--space-md);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease;
+}
+
+.filterSelect:hover {
+  border-color: var(--text-light);
+}
+
+.filterSelect:focus-visible {
+  border-color: var(--primary);
+}
+
+.clearFiltersButton {
+  align-self: flex-start;
+  padding: 8px var(--space-md);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease;
+}
+
+.clearFiltersButton:hover {
+  border-color: var(--text-light);
 }
 
 .listArea {
@@ -207,13 +285,17 @@
 }
 
 @media (min-width: 640px) {
-  .toolbar {
+  .toolbarRow {
     flex-direction: row;
     align-items: center;
   }
 
   .filterButton {
     flex-shrink: 0;
+  }
+
+  .filterFields {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .noResults {
@@ -234,5 +316,9 @@
 
   .uploadButton {
     flex-shrink: 0;
+  }
+
+  .filterFields {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
