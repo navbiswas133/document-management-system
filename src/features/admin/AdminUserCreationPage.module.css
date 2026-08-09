@@ -1,0 +1,138 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 100%;
+  max-width: 1100px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.description {
+  margin: 0;
+  max-width: 640px;
+  color: var(--text-light);
+  font-size: 0.9375rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 10px var(--space-md);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease;
+}
+
+.input::placeholder {
+  color: var(--text-light);
+}
+
+.input:hover {
+  border-color: var(--text-light);
+}
+
+.input:focus-visible {
+  border-color: var(--primary);
+}
+
+.fieldError {
+  border-color: var(--danger);
+}
+
+.fieldError:focus-visible {
+  border-color: var(--danger);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
+.submitButton {
+  align-self: flex-start;
+  padding: 10px var(--space-md);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius);
+  transition: opacity 0.15s ease;
+}
+
+.submitButton:hover {
+  opacity: 0.9;
+}
+
+.successMessage {
+  margin: 0;
+  padding: var(--space-md);
+  color: var(--text);
+  font-size: 0.9375rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .section {
+    max-width: 480px;
+  }
+}

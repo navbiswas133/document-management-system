@@ -6,6 +6,7 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { DocumentsPage } from '../features/documents/DocumentsPage';
 import { DocumentDetailsPage } from '../features/documents/DocumentDetailsPage';
 import { UploadDocumentPage } from '../features/documents/UploadDocumentPage';
+import { AdminUserCreationPage } from '../features/admin/AdminUserCreationPage';
 
 export function AppRoutes() {
   return (
@@ -19,7 +20,7 @@ export function AppRoutes() {
         <Route path="/documents/upload" element={<UploadDocumentPage />} />
         <Route path="/documents/:documentId" element={<DocumentDetailsPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/admin" element={<h1>Admin</h1>} />
+        <Route path="/admin" element={<AdminUserCreationPage />} />
       </Route>
 
       <Route path="*" element={<h1>Page Not Found</h1>} />
