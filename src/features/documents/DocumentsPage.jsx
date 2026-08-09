@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getApiErrorMessage } from '../../lib/apiResponse';
 import { DocumentList } from './DocumentList';
 import {
-  DEFAULT_SEARCH_REQUEST_BODY,
+  buildSearchRequestBody,
   getDocumentApiToken,
   searchDocuments,
 } from './documentsApi';
-import {
-  SEARCH_RESULTS_PLACEHOLDER,
-  SEARCH_RESULTS_TOTAL,
-} from './placeholderDocuments';
+import { parseSearchDocumentResponse } from './searchDocumentResponse';
 import styles from './DocumentsPage.module.css';
 
 const EMPTY_FILTERS = {
@@ -21,7 +19,17 @@ function getFilterOptions(documents) {
   const categories = [
     ...new Set(documents.map((doc) => doc.category).filter(Boolean)),
   ].sort();
-  const tags = [...new Set(documents.flatMap((doc) => doc.tags))].sort();
+  const tags = [
+    ...new Set(
+      documents.flatMap((doc) =>
+        Array.isArray(doc.tags)
+          ? doc.tags.map((tag) =>
+              typeof tag === 'string' ? tag : tag?.tag_name,
+            ).filter(Boolean)
+          : [],
+      ),
+    ),
+  ].sort();
 
   return { categories, tags };
 }
@@ -32,58 +40,25 @@ function applyFilters(documents, filters) {
       return false;
     }
 
-    if (filters.tag && !doc.tags.includes(filters.tag)) {
-      return false;
+    if (filters.tag) {
+      const docTags = Array.isArray(doc.tags)
+        ? doc.tags.map((tag) =>
+            typeof tag === 'string' ? tag : tag?.tag_name,
+          ).filter(Boolean)
+        : [];
+
+      if (!docTags.includes(filters.tag)) {
+        return false;
+      }
     }
 
     return true;
   });
 }
 
-function filterBySearch(documents, query) {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return documents;
-
-  return documents.filter((doc) => {
-    const matchesName = doc.name.toLowerCase().includes(normalizedQuery);
-    const matchesCategory = doc.category?.toLowerCase().includes(normalizedQuery);
-    const matchesDepartment = doc.department?.toLowerCase().includes(normalizedQuery);
-    const matchesDate = doc.date?.toLowerCase().includes(normalizedQuery);
-    const matchesTags = doc.tags.some((tag) =>
-      tag.toLowerCase().includes(normalizedQuery),
-    );
-
-    return (
-      matchesName ||
-      matchesCategory ||
-      matchesDepartment ||
-      matchesDate ||
-      matchesTags
-    );
-  });
-}
-
-function getSearchErrorMessage(error) {
-  const data = error.response?.data;
-
-  if (typeof data === 'string' && data.trim()) {
-    return data;
-  }
-
-  if (data && typeof data.message === 'string' && data.message.trim()) {
-    return data.message;
-  }
-
-  if (error.response?.statusText) {
-    return error.response.statusText;
-  }
-
-  return 'Unable to load documents. Please try again.';
-}
-
 export function DocumentsPage() {
-  const [documents, setDocuments] = useState(SEARCH_RESULTS_PLACEHOLDER);
-  const [totalCount, setTotalCount] = useState(SEARCH_RESULTS_TOTAL);
+  const [documents, setDocuments] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,9 +72,9 @@ export function DocumentsPage() {
 
       if (!token) {
         if (isMounted) {
-          setDocuments(SEARCH_RESULTS_PLACEHOLDER);
-          setTotalCount(SEARCH_RESULTS_TOTAL);
-          setApiError('');
+          setDocuments([]);
+          setTotalCount(0);
+          setApiError('Authentication required.');
           setIsLoading(false);
         }
         return;
@@ -110,33 +85,35 @@ export function DocumentsPage() {
         setApiError('');
       }
 
+      const requestBody = buildSearchRequestBody({
+        searchValue: searchQuery.trim(),
+        tag: filters.tag,
+        majorHead: filters.category,
+      });
+
       try {
-        const response = await searchDocuments(
-          DEFAULT_SEARCH_REQUEST_BODY,
-          token,
-        );
+        const responseData = await searchDocuments(requestBody);
 
         if (!isMounted) {
           return;
         }
 
-        if (import.meta.env.DEV) {
-          console.info(
-            '[documents] searchDocumentEntry response (not mapped):',
-            response.data,
-          );
-        }
+        const { documents: entries, total } = parseSearchDocumentResponse(
+          responseData,
+        );
 
-        setDocuments(SEARCH_RESULTS_PLACEHOLDER);
-        setTotalCount(SEARCH_RESULTS_TOTAL);
+        setDocuments(entries);
+        setTotalCount(total);
       } catch (loadError) {
         if (!isMounted) {
           return;
         }
 
-        setDocuments(SEARCH_RESULTS_PLACEHOLDER);
-        setTotalCount(SEARCH_RESULTS_TOTAL);
-        setApiError(getSearchErrorMessage(loadError));
+        setDocuments([]);
+        setTotalCount(0);
+        setApiError(
+          getApiErrorMessage(loadError, 'Unable to load documents. Please try again.'),
+        );
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -149,13 +126,13 @@ export function DocumentsPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [searchQuery, filters.tag, filters.category]);
 
   const filterOptions = useMemo(() => getFilterOptions(documents), [documents]);
-  const filteredDocuments = useMemo(() => {
-    const byFilters = applyFilters(documents, filters);
-    return filterBySearch(byFilters, searchQuery);
-  }, [documents, filters, searchQuery]);
+  const filteredDocuments = useMemo(
+    () => applyFilters(documents, filters),
+    [documents, filters],
+  );
 
   const resultCount = filteredDocuments.length;
   const filtersActive = Boolean(filters.category || filters.tag);
@@ -294,8 +271,8 @@ export function DocumentsPage() {
       </section>
 
       {apiError && (
-        <p className={styles.apiNotice} role="status">
-          Showing sample results. {apiError}
+        <p className={styles.apiNotice} role="alert">
+          {apiError}
         </p>
       )}
 

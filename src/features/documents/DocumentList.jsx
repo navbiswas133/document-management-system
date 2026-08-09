@@ -1,13 +1,19 @@
 import { Link } from 'react-router-dom';
-import {
-  getFileTone,
-  getTagTone,
-  SEARCH_RESULTS_TOTAL,
-} from './placeholderDocuments';
+import { getFileTone, getTagTone } from './placeholderDocuments';
 import styles from './DocumentList.module.css';
 
 const PAGE_SIZE = 5;
 const TOTAL_PAGES = 5;
+
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return tags
+    .map((tag) => (typeof tag === 'string' ? tag : tag?.tag_name))
+    .filter(Boolean);
+}
 
 function FileIcon({ filename }) {
   const tone = getFileTone(filename);
@@ -71,7 +77,7 @@ function ActionIcons({ documentId, name }) {
   );
 }
 
-export function DocumentList({ documents = [], totalCount = SEARCH_RESULTS_TOTAL }) {
+export function DocumentList({ documents = [], totalCount = 0 }) {
   if (documents.length === 0) {
     return (
       <div className={styles.emptyState} role="status">
@@ -106,17 +112,20 @@ export function DocumentList({ documents = [], totalCount = SEARCH_RESULTS_TOTAL
             </tr>
           </thead>
           <tbody>
-            {documents.map((doc) => {
+            {documents.map((doc, index) => {
               const date = doc.date ?? doc.uploadedAt;
               const department = doc.department ?? doc.type ?? '—';
               const category = doc.category ?? '—';
+              const name = doc.name ?? '—';
+              const tags = normalizeTags(doc.tags);
+              const documentId = doc.id ?? `document-${index}`;
 
               return (
-                <tr key={doc.id}>
+                <tr key={documentId}>
                   <td data-label="File Name">
                     <div className={styles.fileNameCell}>
-                      <FileIcon filename={doc.name} />
-                      <span className={styles.fileName}>{doc.name}</span>
+                      <FileIcon filename={name} />
+                      <span className={styles.fileName}>{name}</span>
                     </div>
                   </td>
                   <td data-label="Category" className={styles.mutedCell}>
@@ -126,23 +135,27 @@ export function DocumentList({ documents = [], totalCount = SEARCH_RESULTS_TOTAL
                     {department}
                   </td>
                   <td data-label="Date" className={styles.mutedCell}>
-                    {date}
+                    {date ?? '—'}
                   </td>
                   <td data-label="Tags">
-                    <ul className={styles.tagList}>
-                      {doc.tags.map((tag) => (
-                        <li key={tag}>
-                          <span
-                            className={`${styles.tag} ${styles[`tag_${getTagTone(tag)}`]}`}
-                          >
-                            {tag}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    {tags.length === 0 ? (
+                      <span className={styles.mutedCell}>—</span>
+                    ) : (
+                      <ul className={styles.tagList}>
+                        {tags.map((tag) => (
+                          <li key={tag}>
+                            <span
+                              className={`${styles.tag} ${styles[`tag_${getTagTone(tag)}`]}`}
+                            >
+                              {tag}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </td>
                   <td data-label="Actions">
-                    <ActionIcons documentId={doc.id} name={doc.name} />
+                    <ActionIcons documentId={documentId} name={name} />
                   </td>
                 </tr>
               );
