@@ -6,6 +6,7 @@ import { DocumentList } from './DocumentList';
 import {
   buildSearchRequestBody,
   getDocumentApiToken,
+  PAGE_SIZE,
   searchDocuments,
 } from './documentsApi';
 import { parseSearchDocumentResponse } from './searchDocumentResponse';
@@ -37,39 +38,19 @@ function getFilterOptions(documents) {
   return { categories, tags };
 }
 
-function applyFilters(documents, filters) {
-  return documents.filter((doc) => {
-    if (filters.category && doc.category !== filters.category) {
-      return false;
-    }
-
-    if (filters.tag) {
-      const docTags = Array.isArray(doc.tags)
-        ? doc.tags.map((tag) =>
-            typeof tag === 'string' ? tag : tag?.tag_name,
-          ).filter(Boolean)
-        : [];
-
-      if (!docTags.includes(filters.tag)) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-}
-
-function getRequestKey(searchValue, filterState) {
+function getRequestKey(searchValue, filterState, page) {
   return JSON.stringify({
     search: searchValue.trim(),
     tag: filterState.tag,
     category: filterState.category,
+    page,
   });
 }
 
 export function DocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,9 +62,9 @@ export function DocumentsPage() {
   const lastRequestKeyRef = useRef('');
   const skipDebouncedSearchRef = useRef(true);
 
-  const fetchDocuments = useCallback(async (searchValue, filterState) => {
+  const fetchDocuments = useCallback(async (searchValue, filterState, page) => {
     const normalizedSearch = searchValue.trim();
-    const requestKey = getRequestKey(normalizedSearch, filterState);
+    const requestKey = getRequestKey(normalizedSearch, filterState, page);
 
     if (requestKey === lastRequestKeyRef.current) {
       return;
@@ -108,6 +89,8 @@ export function DocumentsPage() {
       searchValue: normalizedSearch,
       tag: filterState.tag,
       majorHead: filterState.category,
+      start: (page - 1) * PAGE_SIZE,
+      length: PAGE_SIZE,
     });
 
     try {
@@ -118,6 +101,7 @@ export function DocumentsPage() {
 
       setDocuments(entries);
       setTotalCount(total);
+      setCurrentPage(page);
     } catch (loadError) {
       setDocuments([]);
       setTotalCount(0);
@@ -132,7 +116,9 @@ export function DocumentsPage() {
   const debouncedSearchFetch = useMemo(
     () =>
       debounce((searchValue) => {
-        fetchDocuments(searchValue, filtersRef.current);
+        lastRequestKeyRef.current = '';
+        setCurrentPage(1);
+        fetchDocuments(searchValue, filtersRef.current, 1);
       }, SEARCH_DEBOUNCE_MS),
     [fetchDocuments],
   );
@@ -144,7 +130,9 @@ export function DocumentsPage() {
   }, [debouncedSearchFetch]);
 
   useEffect(() => {
-    fetchDocuments(searchQuery, filters);
+    lastRequestKeyRef.current = '';
+    setCurrentPage(1);
+    fetchDocuments(searchQuery, filters, 1);
   }, [filters.tag, filters.category, fetchDocuments]);
 
   useEffect(() => {
@@ -157,12 +145,6 @@ export function DocumentsPage() {
   }, [searchQuery, debouncedSearchFetch]);
 
   const filterOptions = useMemo(() => getFilterOptions(documents), [documents]);
-  const filteredDocuments = useMemo(
-    () => applyFilters(documents, filters),
-    [documents, filters],
-  );
-
-  const resultCount = filteredDocuments.length;
   const filtersActive = Boolean(filters.category || filters.tag);
 
   function handleFilterChange(field, value) {
@@ -174,13 +156,27 @@ export function DocumentsPage() {
     setSearchQuery('');
   }
 
+  function handlePageChange(page) {
+    if (page === currentPage || page < 1) {
+      return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+    if (page > totalPages) {
+      return;
+    }
+
+    fetchDocuments(searchQuery, filters, page);
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.resultsHeader}>
         <div className={styles.resultsHeading}>
           <h1 className={styles.title}>Search Results</h1>
           <p className={styles.resultCount}>
-            {isLoading ? 'Loading…' : `${resultCount} results found`}
+            {isLoading ? 'Loading…' : `${totalCount} results found`}
           </p>
         </div>
 
@@ -314,8 +310,11 @@ export function DocumentsPage() {
 
         {!isLoading && (
           <DocumentList
-            documents={filteredDocuments}
+            documents={documents}
             totalCount={totalCount}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            onPageChange={handlePageChange}
           />
         )}
       </div>

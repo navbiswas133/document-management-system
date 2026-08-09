@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { getFileTone, getTagTone } from './placeholderDocuments';
+import {
+  downloadDocument,
+  openDocumentPreview,
+} from './documentFileActions';
 import styles from './DocumentList.module.css';
 
-const PAGE_SIZE = 5;
-const TOTAL_PAGES = 5;
+const MAX_VISIBLE_PAGES = 5;
 
 function normalizeTags(tags) {
   if (!Array.isArray(tags)) {
@@ -37,47 +40,68 @@ function FileIcon({ filename }) {
   );
 }
 
-function ActionIcons({ documentId, name }) {
+function ActionIcons({ documentId, name, fileUrl, document }) {
+  const canAccessFile = Boolean(fileUrl);
+
   return (
     <div className={styles.actionIcons}>
-      <Link
-        to={`/documents/${documentId}`}
+      <button
+        type="button"
         className={styles.iconAction}
-        aria-label={`View ${name}`}
+        aria-label={`Preview ${name}`}
+        disabled={!canAccessFile}
+        onClick={() => openDocumentPreview(fileUrl)}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
           <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="2" />
+        </svg>
+      </button>
+      <Link
+        to={`/documents/${documentId}`}
+        state={{ document }}
+        className={styles.iconAction}
+        aria-label={`View details for ${name}`}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M14 3h7v7M10 14L21 3M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Link>
       <button
         type="button"
         className={styles.iconAction}
         aria-label={`Download ${name}`}
-        disabled
+        disabled={!canAccessFile}
+        onClick={() => downloadDocument(fileUrl, name)}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </button>
-      <button
-        type="button"
-        className={styles.iconAction}
-        aria-label={`More actions for ${name}`}
-        disabled
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="6" r="1.5" fill="currentColor" />
-          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-          <circle cx="12" cy="18" r="1.5" fill="currentColor" />
-        </svg>
-      </button>
     </div>
   );
 }
 
-export function DocumentList({ documents = [], totalCount = 0 }) {
+function getVisiblePages(currentPage, totalPages) {
+  if (totalPages <= MAX_VISIBLE_PAGES) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  let start = Math.max(1, currentPage - 2);
+  const end = Math.min(totalPages, start + MAX_VISIBLE_PAGES - 1);
+  start = Math.max(1, end - MAX_VISIBLE_PAGES + 1);
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
+export function DocumentList({
+  documents = [],
+  totalCount = 0,
+  currentPage = 1,
+  pageSize = 10,
+  onPageChange,
+}) {
   if (documents.length === 0) {
     return (
       <div className={styles.emptyState} role="status">
@@ -92,8 +116,12 @@ export function DocumentList({ documents = [], totalCount = 0 }) {
     );
   }
 
-  const showingFrom = 1;
-  const showingTo = documents.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const showingFrom = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const showingTo = Math.min(currentPage * pageSize, totalCount);
+  const visiblePages = getVisiblePages(currentPage, totalPages);
+  const canGoPrevious = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
 
   return (
     <div className={styles.resultsCard}>
@@ -119,6 +147,7 @@ export function DocumentList({ documents = [], totalCount = 0 }) {
               const name = doc.name ?? '—';
               const tags = normalizeTags(doc.tags);
               const documentId = doc.id ?? `document-${index}`;
+              const fileUrl = doc.file_url;
 
               return (
                 <tr key={documentId}>
@@ -155,7 +184,12 @@ export function DocumentList({ documents = [], totalCount = 0 }) {
                     )}
                   </td>
                   <td data-label="Actions">
-                    <ActionIcons documentId={documentId} name={name} />
+                    <ActionIcons
+                      documentId={documentId}
+                      name={name}
+                      fileUrl={fileUrl}
+                      document={doc}
+                    />
                   </td>
                 </tr>
               );
@@ -169,14 +203,19 @@ export function DocumentList({ documents = [], totalCount = 0 }) {
           Showing {showingFrom} to {showingTo} of {totalCount} results
         </p>
         <nav className={styles.pagination} aria-label="Search results pagination">
-          <button type="button" className={styles.pageButton} disabled aria-label="Previous page">
+          <button
+            type="button"
+            className={styles.pageButton}
+            disabled={!canGoPrevious}
+            aria-label="Previous page"
+            onClick={() => onPageChange?.(currentPage - 1)}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
-          {Array.from({ length: TOTAL_PAGES }, (_, index) => {
-            const page = index + 1;
-            const isActive = page === 1;
+          {visiblePages.map((page) => {
+            const isActive = page === currentPage;
 
             return (
               <button
@@ -186,12 +225,19 @@ export function DocumentList({ documents = [], totalCount = 0 }) {
                 aria-label={`Page ${page}`}
                 aria-current={isActive ? 'page' : undefined}
                 disabled={isActive}
+                onClick={() => onPageChange?.(page)}
               >
                 {page}
               </button>
             );
           })}
-          <button type="button" className={styles.pageButton} aria-label="Next page">
+          <button
+            type="button"
+            className={styles.pageButton}
+            disabled={!canGoNext}
+            aria-label="Next page"
+            onClick={() => onPageChange?.(currentPage + 1)}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>

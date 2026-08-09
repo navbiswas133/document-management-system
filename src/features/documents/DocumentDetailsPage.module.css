@@ -168,6 +168,43 @@
   font-size: 0.9375rem;
 }
 
+.statusText {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.9375rem;
+}
+
+.previewFrame {
+  width: 100%;
+  min-height: 280px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.previewImage {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  background: var(--bg);
+}
+
+.previewEmbed {
+  display: block;
+  width: 100%;
+  min-height: 520px;
+  border: none;
+  background: var(--bg);
+}
+
+.previewFallback {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.9375rem;
+}
+
 .placeholderNote {
   margin: 0;
   color: var(--text-light);
