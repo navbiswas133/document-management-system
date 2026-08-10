@@ -130,17 +130,7 @@ Backend: `searchDocumentEntry`, `documentTags`, `saveDocumentEntry`
 
 ---
 
-## What is not implemented yet
 
-<details>
-<summary><strong>Pending / out of scope for this submission</strong></summary>
-
-- Admin user creation API integration
-- Production-grade admin auth (currently hardcoded mobile/OTP)
-- `/verify-otp` route (redirects to `/login`)
-- Deployment config (no Dockerfile / Vercel / Netlify files)
-
-</details>
 
 ---
 
