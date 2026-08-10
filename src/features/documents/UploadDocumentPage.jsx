@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { getApiErrorMessage, getResponseSuccessMessage } from '../../lib/apiResponse';
 import { handleDateFieldClick } from '../../lib/datePickerField';
 import { formatDateForApi } from './searchFilters';
+import { fetchDocumentTags, saveDocumentEntry } from './documentsApi';
 import {
   getDefaultMinorHead,
   getMinorHeadLabel,
@@ -103,6 +104,18 @@ function FileKindIcon({ kind }) {
         </svg>
       )}
     </div>
+  );
+}
+
+function FieldLabel({ icon, tone, children, required }) {
+  return (
+    <span className={styles.fieldLabel}>
+      <span className={`${styles.labelIcon} ${styles[`labelIcon_${tone}`]}`} aria-hidden="true">
+        {icon}
+      </span>
+      {children}
+      {required && <span className={styles.required}> *</span>}
+    </span>
   );
 }
 
@@ -456,9 +469,16 @@ export function UploadDocumentPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Upload Document</h1>
-        <p className={styles.subtitle}>Add a new document to the system</p>
+      <header className={styles.pageHeader}>
+        <div className={styles.pageHeaderIcon} aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div>
+          <h1 className={styles.title}>Upload Document</h1>
+        </div>
       </header>
 
       <form
@@ -467,328 +487,386 @@ export function UploadDocumentPage() {
         noValidate
         aria-busy={isUploading}
       >
-        <div className={styles.fieldGrid}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="document-date">
-              Date <span className={styles.required}>*</span>
-            </label>
-            <div className={`${styles.inputWrap} dateFieldWrap`} onClick={handleDateFieldClick}>
-              <input
-                id="document-date"
-                name="documentDate"
-                type="date"
-                className={fieldClassName(styles.input, styles.fieldError, Boolean(errors.documentDate))}
-                value={form.documentDate}
-                onChange={(event) =>
-                  handleFieldChange('documentDate', event.target.value)
-                }
-                disabled={isUploading}
-                aria-invalid={Boolean(errors.documentDate)}
-                aria-describedby={
-                  errors.documentDate ? 'document-date-error' : undefined
-                }
-              />
-              <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="2" />
-                <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
-            {errors.documentDate && (
-              <p id="document-date-error" className={styles.error}>
-                {errors.documentDate}
-              </p>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="major-head">
-              Category <span className={styles.required}>*</span>
-            </label>
-            <div className={styles.selectWrap}>
-              <select
-                id="major-head"
-                name="majorHead"
-                className={fieldClassName(styles.select, styles.fieldError, Boolean(errors.majorHead))}
-                value={form.majorHead}
-                onChange={(event) => handleMajorHeadChange(event.target.value)}
-                disabled={isUploading}
-                aria-invalid={Boolean(errors.majorHead)}
-                aria-describedby={
-                  errors.majorHead ? 'major-head-error' : undefined
-                }
-              >
-                {MAJOR_HEAD_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
-            {errors.majorHead && (
-              <p id="major-head-error" className={styles.error}>
-                {errors.majorHead}
-              </p>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="minor-head">
-              {minorHeadLabel} <span className={styles.required}>*</span>
-            </label>
-            <div className={styles.selectWrap}>
-              <select
-                id="minor-head"
-                name="minorHead"
-                className={fieldClassName(styles.select, styles.fieldError, Boolean(errors.minorHead))}
-                value={form.minorHead}
-                onChange={(event) =>
-                  handleFieldChange('minorHead', event.target.value)
-                }
-                disabled={isUploading}
-                aria-invalid={Boolean(errors.minorHead)}
-                aria-describedby={
-                  errors.minorHead ? 'minor-head-error' : undefined
-                }
-              >
-                {minorHeadOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </div>
-            {errors.minorHead && (
-              <p id="minor-head-error" className={styles.error}>
-                {errors.minorHead}
-              </p>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="tag-input">
-              Tags <span className={styles.required}>*</span>
-            </label>
-
-            <div className={styles.tagFieldWrap} ref={tagFieldRef}>
-              <div
-                className={fieldClassName(
-                  styles.tagsField,
-                  styles.tagsFieldError,
-                  Boolean(errors.tags),
-                )}
-                onClick={() => tagInputRef.current?.focus()}
-              >
-                {form.tags.map((tag) => (
-                  <span key={tag} className={styles.tagChip}>
-                    {tag}
-                    <button
-                      type="button"
-                      className={styles.tagRemove}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleRemoveTag(tag);
-                      }}
-                      disabled={isUploading}
-                      aria-label={`Remove tag ${tag}`}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </button>
-                  </span>
-                ))}
+          <div className={styles.fieldGrid}>
+            <div className={styles.field}>
+              <label className={styles.labelWrap} htmlFor="document-date">
+                <FieldLabel
+                  required
+                  tone="orange"
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                      <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  }
+                >
+                  Date
+                </FieldLabel>
+              </label>
+              <div className={`${styles.inputWrap} dateFieldWrap`} onClick={handleDateFieldClick}>
+                <span className={`${styles.fieldIcon} ${styles.fieldIcon_orange}`} aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                    <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                </span>
                 <input
-                  id="tag-input"
-                  ref={tagInputRef}
-                  type="text"
-                  className={styles.tagInput}
-                  value={tagInput}
-                  onChange={(event) => setTagInput(event.target.value)}
-                  onFocus={handleTagFieldFocus}
-                  onBlur={handleTagFieldBlur}
-                  onKeyDown={handleTagInputKeyDown}
-                  placeholder="Click to select or type a tag"
+                  id="document-date"
+                  name="documentDate"
+                  type="date"
+                  className={fieldClassName(styles.input, styles.fieldError, Boolean(errors.documentDate))}
+                  value={form.documentDate}
+                  onChange={(event) =>
+                    handleFieldChange('documentDate', event.target.value)
+                  }
                   disabled={isUploading}
-                  aria-invalid={Boolean(errors.tags)}
-                  aria-expanded={showTagList}
-                  aria-haspopup="listbox"
-                  aria-describedby={errors.tags ? 'tags-error' : undefined}
+                  aria-invalid={Boolean(errors.documentDate)}
+                  aria-describedby={
+                    errors.documentDate ? 'document-date-error' : undefined
+                  }
                 />
               </div>
-
-              {showTagList && (
-                <ul className={styles.tagDropdownList} role="listbox" aria-label="Tag suggestions">
-                  {isLoadingTags && (
-                    <li className={styles.tagDropdownEmpty}>Loading tags…</li>
-                  )}
-                  {!isLoadingTags && tagListOptions.length === 0 && (
-                    <li className={styles.tagDropdownEmpty}>
-                      {tagInput.trim()
-                        ? 'No matching tags. Press Enter to add.'
-                        : 'No tags available. Type and press Enter.'}
-                    </li>
-                  )}
-                  {!isLoadingTags &&
-                    tagListOptions.map((tag) => (
-                      <li key={tag}>
-                        <button
-                          type="button"
-                          className={styles.tagDropdownOption}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => handleSelectTag(tag)}
-                          disabled={isUploading}
-                          role="option"
-                        >
-                          {tag}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
+              {errors.documentDate && (
+                <p id="document-date-error" className={styles.error}>
+                  {errors.documentDate}
+                </p>
               )}
             </div>
 
-            {errors.tags && (
-              <p id="tags-error" className={styles.error}>
-                {errors.tags}
-              </p>
-            )}
-            <p className={styles.fieldHint}>
-              Click the field to load tags, pick from the list, or type a new tag and press Enter.
-            </p>
-          </div>
-        </div>
+            <div className={styles.field}>
+              <label className={styles.labelWrap} htmlFor="major-head">
+                <FieldLabel
+                  required
+                  tone="purple"
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  }
+                >
+                  Category
+                </FieldLabel>
+              </label>
+              <div className={`${styles.selectWrap} ${styles.selectWrap_purple}`}>
+                <select
+                  id="major-head"
+                  name="majorHead"
+                  className={fieldClassName(styles.select, styles.fieldError, Boolean(errors.majorHead))}
+                  value={form.majorHead}
+                  onChange={(event) => handleMajorHeadChange(event.target.value)}
+                  disabled={isUploading}
+                  aria-invalid={Boolean(errors.majorHead)}
+                  aria-describedby={
+                    errors.majorHead ? 'major-head-error' : undefined
+                  }
+                >
+                  {MAJOR_HEAD_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              {errors.majorHead && (
+                <p id="major-head-error" className={styles.error}>
+                  {errors.majorHead}
+                </p>
+              )}
+            </div>
 
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="remarks">
-            Remarks
-          </label>
-          <textarea
-            id="remarks"
-            name="remarks"
-            className={styles.textarea}
-            rows={4}
-            value={form.remarks}
-            onChange={(event) =>
-              handleFieldChange('remarks', event.target.value)
-            }
-            disabled={isUploading}
-            placeholder="Optional remarks"
-          />
-        </div>
+            <div className={styles.field}>
+              <label className={styles.labelWrap} htmlFor="minor-head">
+                <FieldLabel
+                  required
+                  tone="blue"
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="2" />
+                      <path d="M6 20c0-3.3 2.4-6 6-6s6 2.7 6 6" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  }
+                >
+                  {minorHeadLabel}
+                </FieldLabel>
+              </label>
+              <div className={`${styles.selectWrap} ${styles.selectWrap_blue}`}>
+                <select
+                  id="minor-head"
+                  name="minorHead"
+                  className={fieldClassName(styles.select, styles.fieldError, Boolean(errors.minorHead))}
+                  value={form.minorHead}
+                  onChange={(event) =>
+                    handleFieldChange('minorHead', event.target.value)
+                  }
+                  disabled={isUploading}
+                  aria-invalid={Boolean(errors.minorHead)}
+                  aria-describedby={
+                    errors.minorHead ? 'minor-head-error' : undefined
+                  }
+                >
+                  {minorHeadOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              {errors.minorHead && (
+                <p id="minor-head-error" className={styles.error}>
+                  {errors.minorHead}
+                </p>
+              )}
+            </div>
 
-        <div className={styles.fileSection}>
-          <label className={styles.label} htmlFor="document-file">
-            Select File <span className={styles.required}>*</span>
-          </label>
+            <div className={`${styles.field} ${styles.fieldFull}`}>
+              <label className={styles.labelWrap} htmlFor="tag-input">
+                <FieldLabel
+                  required
+                  tone="green"
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 12l-8 8-4-4-6-6 8-8 6 6 4 4z" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  }
+                >
+                  Tags
+                </FieldLabel>
+              </label>
 
-          <div
-            className={`${styles.dropzone} ${file ? styles.dropzoneHasFile : ''} ${isDragging ? styles.dropzoneActive : ''} ${errors.file ? styles.dropzoneError : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={handleDropzoneClick}
-            onKeyDown={handleDropzoneKeyDown}
-            role={file ? undefined : 'button'}
-            tabIndex={file ? undefined : 0}
-            aria-label={file ? undefined : 'Browse or drag and drop a file'}
-          >
-            {file ? (
-              <div className={styles.filePreview}>
-                <FileKindIcon kind={getFileKind(file)} />
-                <div className={styles.filePreviewInfo}>
-                  <p className={styles.filePreviewName}>{file.name}</p>
-                  <p className={styles.filePreviewMeta}>
-                    {file.type || 'Unknown type'} · {formatFileSize(file.size)}
-                  </p>
+              <div className={styles.tagFieldWrap} ref={tagFieldRef}>
+                <div
+                  className={fieldClassName(
+                    styles.tagsField,
+                    styles.tagsFieldError,
+                    Boolean(errors.tags),
+                  )}
+                  onClick={() => tagFieldRef.current?.querySelector('input')?.focus()}
+                >
+                  {form.tags.map((tag) => (
+                    <span key={tag} className={styles.tagChip}>
+                      {tag}
+                      <button
+                        type="button"
+                        className={styles.tagRemove}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleRemoveTag(tag);
+                        }}
+                        disabled={isUploading}
+                        aria-label={`Remove tag ${tag}`}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    id="tag-input"
+                    ref={tagInputRef}
+                    type="text"
+                    className={styles.tagInput}
+                    value={tagInput}
+                    onChange={(event) => setTagInput(event.target.value)}
+                    onFocus={handleTagFieldFocus}
+                    onBlur={handleTagFieldBlur}
+                    onKeyDown={handleTagInputKeyDown}
+                    placeholder="Select or type a tag"
+                    disabled={isUploading}
+                    aria-invalid={Boolean(errors.tags)}
+                    aria-expanded={showTagList}
+                    aria-haspopup="listbox"
+                    aria-describedby={errors.tags ? 'tags-error' : undefined}
+                  />
                 </div>
-                <div className={styles.filePreviewActions}>
+
+                {showTagList && (
+                  <ul className={styles.tagDropdownList} role="listbox" aria-label="Tag suggestions">
+                    {isLoadingTags && (
+                      <li className={styles.tagDropdownEmpty}>Loading tags…</li>
+                    )}
+                    {!isLoadingTags && tagListOptions.length === 0 && (
+                      <li className={styles.tagDropdownEmpty}>
+                        {tagInput.trim()
+                          ? 'No matching tags. Press Enter to add.'
+                          : 'No tags available. Type and press Enter.'}
+                      </li>
+                    )}
+                    {!isLoadingTags &&
+                      tagListOptions.map((tag) => (
+                        <li key={tag}>
+                          <button
+                            type="button"
+                            className={styles.tagDropdownOption}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => handleSelectTag(tag)}
+                            disabled={isUploading}
+                            role="option"
+                          >
+                            {tag}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+
+              {errors.tags && (
+                <p id="tags-error" className={styles.error}>
+                  {errors.tags}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.labelWrap} htmlFor="remarks">
+              <FieldLabel
+                tone="teal"
+                icon={
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 4h12v16H6z" stroke="currentColor" strokeWidth="2" />
+                    <path d="M9 8h6M9 12h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                }
+              >
+                Remarks
+              </FieldLabel>
+            </label>
+            <textarea
+              id="remarks"
+              name="remarks"
+              className={styles.textarea}
+              rows={3}
+              value={form.remarks}
+              onChange={(event) =>
+                handleFieldChange('remarks', event.target.value)
+              }
+              disabled={isUploading}
+              placeholder="Optional notes about this document"
+            />
+          </div>
+
+          <div className={styles.fileDivider} aria-hidden="true" />
+
+          <div className={styles.fileSection} aria-labelledby="upload-file-heading">
+            <h2 id="upload-file-heading" className={styles.sectionTitle}>
+              <span className={styles.sectionTitleIcon} aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
+                  <path d="M14 4v4h4" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              </span>
+              Select file
+            </h2>
+
+            <div
+              className={`${styles.dropzone} ${file ? styles.dropzoneHasFile : ''} ${isDragging ? styles.dropzoneActive : ''} ${errors.file ? styles.dropzoneError : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={handleDropzoneClick}
+              onKeyDown={handleDropzoneKeyDown}
+              role={file ? undefined : 'button'}
+              tabIndex={file ? undefined : 0}
+              aria-label={file ? undefined : 'Browse or drag and drop a file'}
+            >
+              {file ? (
+                <div className={styles.filePreview}>
+                  <FileKindIcon kind={getFileKind(file)} />
+                  <div className={styles.filePreviewInfo}>
+                    <p className={styles.filePreviewName}>{file.name}</p>
+                    <p className={styles.filePreviewMeta}>
+                      {file.type || 'Unknown type'} · {formatFileSize(file.size)}
+                    </p>
+                  </div>
+                  <div className={styles.filePreviewActions}>
+                    <button
+                      type="button"
+                      className={styles.fileActionButton}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleBrowseClick();
+                      }}
+                      disabled={isUploading}
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.fileActionButton} ${styles.fileActionButtonDanger}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleRemoveFile();
+                      }}
+                      disabled={isUploading}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.dropzoneIconWrap}>
+                    <svg className={styles.dropzoneIcon} width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 15V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M8.5 10.5L12 7l3.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M5 18a2 2 0 002 2h10a2 2 0 002-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <p className={styles.dropzoneTitle}>Drag &amp; drop your file here</p>
+                  <p className={styles.dropzoneText}>PDF, JPG, or PNG — max 10MB</p>
                   <button
                     type="button"
-                    className={styles.fileActionButton}
+                    className={styles.browseButton}
                     onClick={(event) => {
                       event.stopPropagation();
                       handleBrowseClick();
                     }}
                     disabled={isUploading}
                   >
-                    Change
+                    Browse files
                   </button>
-                  <button
-                    type="button"
-                    className={styles.fileActionButton}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleRemoveFile();
-                    }}
-                    disabled={isUploading}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className={styles.dropzoneIconWrap}>
-                  <svg className={styles.dropzoneIcon} width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 15V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <path d="M8.5 10.5L12 7l3.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M5 18a2 2 0 002 2h10a2 2 0 002-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <path d="M8 6a4 4 0 018 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <p className={styles.dropzoneTitle}>Drag &amp; drop file here</p>
-                <p className={styles.dropzoneText}>or click to browse from your device</p>
-                <button
-                  type="button"
-                  className={styles.browseButton}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleBrowseClick();
-                  }}
-                  disabled={isUploading}
-                >
-                  Browse File
-                </button>
-              </>
-            )}
+                </>
+              )}
 
-            <input
-              id="document-file"
-              ref={fileInputRef}
-              name="file"
-              type="file"
-              className={styles.hiddenFileInput}
-              accept={FILE_INPUT_ACCEPT}
-              onChange={handleFileChange}
-              disabled={isUploading}
-              aria-invalid={Boolean(errors.file)}
-              aria-describedby={errors.file ? 'document-file-error' : 'file-hint'}
-            />
-          </div>
-
-          <div className={styles.fileMeta}>
-            <p id="file-hint" className={styles.fileHint}>
-              Only PDF and image files are allowed (JPG, PNG — max 10MB)
-            </p>
-            <div className={styles.fileTypes} aria-hidden="true">
-              <span className={styles.fileTypeBadge}>PDF</span>
-              <span className={styles.fileTypeBadge}>JPG</span>
-              <span className={styles.fileTypeBadge}>PNG</span>
+              <input
+                id="document-file"
+                ref={fileInputRef}
+                name="file"
+                type="file"
+                className={styles.hiddenFileInput}
+                accept={FILE_INPUT_ACCEPT}
+                onChange={handleFileChange}
+                disabled={isUploading}
+                aria-invalid={Boolean(errors.file)}
+                aria-describedby={errors.file ? 'document-file-error' : 'file-hint'}
+              />
             </div>
-          </div>
 
-          {errors.file && (
-            <p id="document-file-error" className={styles.error}>
-              {errors.file}
-            </p>
-          )}
-        </div>
+            <div className={styles.fileMeta}>
+              <p id="file-hint" className={styles.fileHint}>
+                Supported formats
+              </p>
+              <div className={styles.fileTypes} aria-hidden="true">
+                <span className={`${styles.fileTypeBadge} ${styles.fileTypeBadge_pdf}`}>PDF</span>
+                <span className={`${styles.fileTypeBadge} ${styles.fileTypeBadge_image}`}>JPG</span>
+                <span className={`${styles.fileTypeBadge} ${styles.fileTypeBadge_image}`}>PNG</span>
+              </div>
+            </div>
+
+            {errors.file && (
+              <p id="document-file-error" className={styles.error}>
+                {errors.file}
+              </p>
+            )}
+          </div>
 
         <div className={styles.actions}>
           <button
@@ -804,7 +882,11 @@ export function UploadDocumentPage() {
             className={styles.uploadButton}
             disabled={isUploading}
           >
-            {isUploading ? 'Uploading…' : 'Upload'}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            {isUploading ? 'Uploading…' : 'Upload document'}
           </button>
         </div>
       </form>
