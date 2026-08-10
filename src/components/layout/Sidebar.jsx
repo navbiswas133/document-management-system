@@ -4,10 +4,13 @@ import { BRANDING } from '../../constants/branding';
 import { logout } from '../../store/authSlice';
 import styles from './Sidebar.module.css';
 
-const links = [
+const mainLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { to: '/documents', label: 'Documents', icon: 'folder', end: true },
-  { to: '/documents/upload', label: 'Upload Document', icon: 'upload' },
+  { to: '/documents/upload', label: 'Upload', icon: 'upload' },
+];
+
+const adminLinks = [
   { to: '/admin', label: 'Admin', icon: 'admin' },
 ];
 
@@ -106,28 +109,47 @@ export function Sidebar({
             />
           </div>
 
-        <nav className={styles.nav}>
-          {links.map((link) => (
-            <NavLink
-              key={`${link.to}-${link.label}`}
-              to={link.to}
-              end={link.end}
-              title={isCollapsed ? link.label : undefined}
-              aria-label={link.label}
-              className={({ isActive }) =>
-                isActive ? `${styles.link} ${styles.linkActive}` : styles.link
-              }
-              onClick={onClose}
-            >
-              <span className={styles.linkIcon}>
-                <NavIcon name={link.icon} />
-              </span>
-              <span className={styles.linkLabel}>{link.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+          <nav className={styles.nav}>
+            {mainLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                title={isCollapsed ? link.label : undefined}
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.linkActive}` : styles.link
+                }
+                onClick={onClose}
+              >
+                <span className={styles.linkIcon}>
+                  <NavIcon name={link.icon} />
+                </span>
+                <span className={styles.linkLabel}>{link.label}</span>
+              </NavLink>
+            ))}
 
-        <div className={styles.footer}>
+            <div className={styles.navDivider} aria-hidden="true" />
+
+            {adminLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                title={isCollapsed ? link.label : undefined}
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.linkActive}` : styles.link
+                }
+                onClick={onClose}
+              >
+                <span className={styles.linkIcon}>
+                  <NavIcon name={link.icon} />
+                </span>
+                <span className={styles.linkLabel}>{link.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className={styles.footer}>
           <button
             type="button"
             className={styles.logout}
@@ -138,7 +160,7 @@ export function Sidebar({
             <NavIcon name="logout" />
             <span className={styles.logoutLabel}>Logout</span>
           </button>
-        </div>
+          </div>
         </aside>
 
         <button
