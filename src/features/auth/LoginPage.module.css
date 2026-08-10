@@ -2,16 +2,21 @@
   --login-primary: #4242e0;
   --login-primary-dark: #3535c9;
   --login-primary-soft: #f4f1ff;
-  --login-hero-bg: #ece8ff;
   --login-border: #e5e7eb;
   --login-muted: #6b7280;
-  --login-navy: #1e2a5a;
 
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 24px 16px;
+  min-height: 100dvh;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  overflow-x: hidden;
   background: #f0f1f5;
 }
 
@@ -29,16 +34,17 @@
 
 .cardBody {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
 }
 
 .formPanel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 28px 28px 24px;
+  gap: clamp(16px, 3vw, 20px);
+  padding: clamp(20px, 4vw, 32px) clamp(18px, 4vw, 36px) clamp(18px, 3vw, 28px);
   background: var(--surface);
+  min-width: 0;
 }
 
 .brand {
@@ -47,19 +53,24 @@
 
 .brandLogoImage {
   display: block;
-  width: 100%;
-  max-width: 220px;
+  width: auto;
+  max-width: min(220px, 58vw);
   height: auto;
   object-fit: contain;
 }
 
+.intro {
+  min-width: 0;
+}
+
 .headline {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 0.9rem + 1.8vw, 1.5rem);
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.02em;
   color: var(--text);
+  text-wrap: balance;
 }
 
 .headlineAccent {
@@ -67,28 +78,25 @@
 }
 
 .instruction {
-  margin: 0;
+  margin: 8px 0 0;
   color: var(--login-muted);
-  font-size: 0.9375rem;
+  font-size: clamp(0.8125rem, 0.75rem + 0.4vw, 0.9375rem);
   line-height: 1.5;
 }
 
-.mobileForm {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
+.mobileForm,
 .otpSection {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .label {
@@ -102,7 +110,7 @@
   min-height: 44px;
   padding: 10px 14px;
   color: var(--text);
-  font-size: 0.9375rem;
+  font-size: 16px;
   font-weight: 500;
   background: var(--surface);
   border: 1px solid var(--login-border);
@@ -188,7 +196,8 @@
 .features {
   display: flex;
   justify-content: center;
-  gap: 22px;
+  flex-wrap: wrap;
+  gap: clamp(12px, 3vw, 22px);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -199,7 +208,9 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  min-width: 72px;
+  flex: 1 1 64px;
+  min-width: 0;
+  max-width: 96px;
 }
 
 .featureIcon {
@@ -212,24 +223,28 @@
   background: #f8f7fc;
   border: 1px solid #eceaf8;
   border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .featureLabel {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--login-muted);
+  text-align: center;
 }
 
 .otpLabel {
   margin: 0;
-  font-size: 1rem;
+  font-size: clamp(0.9375rem, 0.875rem + 0.4vw, 1rem);
   font-weight: 700;
 }
 
 .otpHint {
   margin: 0;
   color: var(--login-muted);
-  font-size: 0.875rem;
+  font-size: clamp(0.8125rem, 0.75rem + 0.35vw, 0.875rem);
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 .otpHint strong {
@@ -240,14 +255,17 @@
 .otpInputs {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  gap: clamp(4px, 1.5vw, 8px);
+  width: 100%;
+  max-width: 100%;
 }
 
 .otpInput {
   width: 100%;
   min-width: 0;
-  padding: 12px 0;
-  font-size: 1rem;
+  min-height: 44px;
+  padding: 10px 0;
+  font-size: clamp(0.9375rem, 0.8rem + 0.6vw, 1rem);
   font-weight: 600;
   text-align: center;
   color: var(--text);
@@ -272,16 +290,18 @@
   color: var(--login-muted);
   font-size: 0.8125rem;
   text-align: center;
+  line-height: 1.4;
 }
 
 .resendButton {
   align-self: center;
-  padding: 0;
+  padding: 4px 8px;
   color: var(--login-primary);
   font-size: 0.8125rem;
   font-weight: 600;
   background: none;
   border: none;
+  min-height: 36px;
 }
 
 .resendButton:hover:not(:disabled) {
@@ -306,6 +326,12 @@
   font-weight: 600;
   background: #f3f0ff;
   border-top: 1px solid #ebe6ff;
+  text-align: center;
+}
+
+.footerText {
+  line-height: 1.35;
+  text-wrap: balance;
 }
 
 .footerCheck {
@@ -323,6 +349,7 @@
 .heroPanel {
   display: none;
   position: relative;
+  min-width: 0;
   background: linear-gradient(160deg, #f0ecff 0%, #e8e4fc 45%, #ddd8f8 100%);
   overflow: hidden;
 }
@@ -331,7 +358,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 360px;
+  min-height: 320px;
 }
 
 .heroDots {
@@ -359,8 +386,8 @@
   position: absolute;
   top: 18%;
   left: 50%;
-  width: 240px;
-  height: 240px;
+  width: min(240px, 70%);
+  height: min(240px, 70%);
   border: 1px dashed rgba(66, 66, 224, 0.22);
   border-radius: 999px;
   transform: translateX(-50%);
@@ -515,13 +542,33 @@
   transform: translateX(-50%);
 }
 
-@media (min-width: 900px) {
-  .cardBody {
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.85fr);
+/* Tablet: centered single column */
+@media (min-width: 600px) {
+  .page {
+    padding:
+      max(20px, env(safe-area-inset-top))
+      max(20px, env(safe-area-inset-right))
+      max(20px, env(safe-area-inset-bottom))
+      max(20px, env(safe-area-inset-left));
   }
 
-  .formPanel {
-    padding: 32px 36px 28px;
+  .card {
+    max-width: min(520px, 100%);
+  }
+}
+
+/* Desktop: split layout with hero */
+@media (min-width: 900px) {
+  .page {
+    padding: 24px 16px;
+  }
+
+  .card {
+    max-width: 880px;
+  }
+
+  .cardBody {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.85fr);
   }
 
   .heroPanel {
@@ -533,20 +580,76 @@
   }
 }
 
-@media (max-width: 480px) {
+/* Large desktop */
+@media (min-width: 1200px) {
+  .card {
+    max-width: 920px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 359px) {
+  .page {
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+  }
+
+  .card {
+    border-radius: 12px;
+  }
+
   .formPanel {
-    padding: 22px 18px 18px;
-  }
-
-  .headline {
-    font-size: 1.375rem;
-  }
-
-  .features {
-    gap: 16px;
+    padding: 16px 14px 14px;
+    gap: 14px;
   }
 
   .featureItem {
-    min-width: 64px;
+    flex: 1 1 56px;
+    max-width: none;
+  }
+
+  .featureIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .featureLabel {
+    font-size: 0.6875rem;
+  }
+
+  .cardFooter {
+    padding: 8px 12px;
+    font-size: 0.6875rem;
+  }
+}
+
+/* Short landscape screens */
+@media (max-height: 520px) and (orientation: landscape) {
+  .page {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .formPanel {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+
+  .features,
+  .dividerOr {
+    display: none;
+  }
+
+  .cardFooter {
+    padding: 6px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryButton:hover:not(:disabled) {
+    transform: none;
   }
 }
