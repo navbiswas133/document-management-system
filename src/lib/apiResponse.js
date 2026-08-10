@@ -48,8 +48,12 @@ export function getApiErrorMessage(error, fallback) {
     return data;
   }
 
-  if (data?.message?.trim()) {
-    return data.message;
+  if (data) {
+    const apiMessage = getResponseErrorMessage(data, '');
+
+    if (apiMessage) {
+      return apiMessage;
+    }
   }
 
   return fallback;

@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -59,6 +59,9 @@ const EMPTY_FORM = {
   remarks: '',
   tags: [],
 };
+
+const TAG_SEARCH_DEBOUNCE_MS = 300;
+const UPLOAD_SUCCESS_MESSAGE = 'Document uploaded successfully';
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -155,18 +158,32 @@ export function UploadDocumentPage() {
   const minorHeadOptions = getMinorHeadOptions(form.majorHead);
   const minorHeadLabel = getMinorHeadLabel(form.majorHead);
 
-  async function loadDocumentTags(term = '') {
+  async function loadDocumentTags(term = '', { silent = false } = {}) {
     setIsLoadingTags(true);
 
     try {
       const tags = await fetchDocumentTags(term);
       setExistingTags(tags);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Unable to load tags.'));
+      if (!silent) {
+        toast.error(getApiErrorMessage(error, 'Unable to load tags.'));
+      }
     } finally {
       setIsLoadingTags(false);
     }
   }
+
+  useEffect(() => {
+    if (!showTagList) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      loadDocumentTags(tagInput.trim(), { silent: true });
+    }, TAG_SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [tagInput, showTagList]);
 
   const tagListOptions = useMemo(() => {
     const query = tagInput.trim().toLowerCase();
@@ -204,8 +221,6 @@ export function UploadDocumentPage() {
 
   function handleFieldChange(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
-    setStatusMessage('');
-    setStatusType('');
 
     if (errors[field]) {
       setErrors((current) => {
@@ -222,8 +237,6 @@ export function UploadDocumentPage() {
       majorHead: value,
       minorHead: getDefaultMinorHead(value),
     }));
-    setStatusMessage('');
-    setStatusType('');
 
     if (errors.majorHead || errors.minorHead) {
       setErrors((current) => {
@@ -247,8 +260,6 @@ export function UploadDocumentPage() {
       tags: [...current.tags, normalizedTag],
     }));
     setTagInput('');
-    setStatusMessage('');
-    setStatusType('');
 
     if (errors.tags) {
       setErrors((current) => {
@@ -280,8 +291,6 @@ export function UploadDocumentPage() {
   function assignFile(selectedFile) {
     if (!selectedFile) {
       setFile(null);
-      setStatusMessage('');
-      setStatusType('');
 
       if (errors.file) {
         setErrors((current) => {
@@ -298,8 +307,6 @@ export function UploadDocumentPage() {
 
     if (fileError) {
       setFile(null);
-      setStatusMessage('');
-      setStatusType('');
       setErrors((current) => ({ ...current, file: fileError }));
 
       if (fileInputRef.current) {
@@ -310,8 +317,6 @@ export function UploadDocumentPage() {
     }
 
     setFile(selectedFile);
-    setStatusMessage('');
-    setStatusType('');
 
     if (errors.file) {
       setErrors((current) => {
@@ -332,8 +337,6 @@ export function UploadDocumentPage() {
 
   function handleRemoveFile() {
     setFile(null);
-    setStatusMessage('');
-    setStatusType('');
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -384,8 +387,6 @@ export function UploadDocumentPage() {
     });
     setFile(null);
     setErrors({});
-    setStatusMessage('');
-    setStatusType('');
     setTagInput('');
 
     if (fileInputRef.current) {
@@ -436,14 +437,17 @@ export function UploadDocumentPage() {
         userId,
       });
 
-      resetFormAfterSuccess();
       toast.success(
-        getResponseSuccessMessage(response, 'Document uploaded successfully'),
+        getResponseSuccessMessage(response, UPLOAD_SUCCESS_MESSAGE),
       );
+      resetFormAfterSuccess();
       navigate('/documents');
     } catch (uploadError) {
       toast.error(
-        getApiErrorMessage(uploadError, 'Unable to upload document. Please try again.'),
+        getApiErrorMessage(
+          uploadError,
+          'Unable to upload document. Please try again.',
+        ),
       );
     } finally {
       setIsUploading(false);
@@ -457,7 +461,12 @@ export function UploadDocumentPage() {
         <p className={styles.subtitle}>Add a new document to the system</p>
       </header>
 
-      <form className={styles.formCard} onSubmit={handleSubmit} noValidate>
+      <form
+        className={styles.formCard}
+        onSubmit={handleSubmit}
+        noValidate
+        aria-busy={isUploading}
+      >
         <div className={styles.fieldGrid}>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="document-date">
