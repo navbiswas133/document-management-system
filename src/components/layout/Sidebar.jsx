@@ -1,5 +1,6 @@
 import { useDispatch } from 'react-redux';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { BRANDING } from '../../constants/branding';
 import { logout } from '../../store/authSlice';
 import styles from './Sidebar.module.css';
 
@@ -98,12 +99,12 @@ export function Sidebar({
           aria-label="Main navigation"
         >
           <div className={styles.brand}>
-          <div className={styles.brandLogo} aria-hidden="true" />
-          <div className={styles.brandText}>
-            <p className={styles.brandTitle}>DMS</p>
-            <p className={styles.brandSubtitle}>Document Management System</p>
+            <img
+              src={isCollapsed ? BRANDING.favicon : BRANDING.logo}
+              alt={BRANDING.name}
+              className={isCollapsed ? styles.brandFavicon : styles.brandLogo}
+            />
           </div>
-        </div>
 
         <nav className={styles.nav}>
           {links.map((link) => (

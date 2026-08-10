@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '../../lib/apiResponse';
+import { BRANDING } from '../../constants/branding';
 import { setCredentials } from '../../store/authSlice';
 import { generateOTP, validateOTP } from './authApi';
 import { loginSchema } from './loginSchema';
@@ -54,14 +55,11 @@ function SendIcon() {
 function LoginBrand() {
   return (
     <header className={styles.brand}>
-      <div className={styles.logo} aria-hidden="true">
-        <FolderLogoIcon />
-      </div>
-      <div className={styles.brandText}>
-        <p className={styles.brandTitle}>DMS</p>
-        <p className={styles.brandSubtitle}>Document Management System</p>
-        <div className={styles.brandRule} aria-hidden="true" />
-      </div>
+      <img
+        src={BRANDING.logo}
+        alt={BRANDING.name}
+        className={styles.brandLogoImage}
+      />
     </header>
   );
 }

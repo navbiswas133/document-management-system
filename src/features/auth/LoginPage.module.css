@@ -42,50 +42,15 @@
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: block;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--login-navy);
-  border-radius: 10px;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.brandText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.brandTitle {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--text);
-}
-
-.brandSubtitle {
-  margin: 0;
-  color: var(--login-muted);
-  font-size: 0.8125rem;
-  line-height: 1.35;
-}
-
-.brandRule {
-  width: 48px;
-  height: 3px;
-  margin-top: 4px;
-  background: var(--login-navy);
-  border-radius: 999px;
+.brandLogoImage {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
 }
 
 .headline {
