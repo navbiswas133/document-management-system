@@ -2,6 +2,28 @@ import styles from './DocumentSearch.module.css';
 
 const DEFAULT_MAJOR_CATEGORIES = ['Company', 'Personal', 'Professional'];
 
+function FilterLabel({ icon, tone, children }) {
+  return (
+    <span className={styles.filterLabel}>
+      <span className={`${styles.labelIcon} ${styles[`labelIcon_${tone}`]}`} aria-hidden="true">
+        {icon}
+      </span>
+      {children}
+    </span>
+  );
+}
+
+function InputWrap({ icon, tone, children }) {
+  return (
+    <div className={styles.inputWrap}>
+      <span className={`${styles.fieldIcon} ${styles[`fieldIcon_${tone}`]}`} aria-hidden="true">
+        {icon}
+      </span>
+      {children}
+    </div>
+  );
+}
+
 export function DocumentSearch({
   filters,
   majorCategoryOptions,
@@ -14,10 +36,19 @@ export function DocumentSearch({
     <section className={styles.panel} aria-label="Document filters">
       <div className={styles.filtersRow}>
         <div className={styles.filterField}>
-          <label className={styles.filterLabel} htmlFor="filter-major-category">
-            Major category
+          <label className={styles.filterLabelWrap} htmlFor="filter-major-category">
+            <FilterLabel
+              tone="purple"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              }
+            >
+              Major category
+            </FilterLabel>
           </label>
-          <div className={styles.selectWrap}>
+          <div className={`${styles.selectWrap} ${styles.selectWrap_purple}`}>
             <select
               id="filter-major-category"
               className={styles.filterSelect}
@@ -38,10 +69,20 @@ export function DocumentSearch({
         </div>
 
         <div className={styles.filterField}>
-          <label className={styles.filterLabel} htmlFor="filter-minor-category">
-            Minor category
+          <label className={styles.filterLabelWrap} htmlFor="filter-minor-category">
+            <FilterLabel
+              tone="blue"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="2" />
+                  <path d="M6 20c0-3.3 2.4-6 6-6s6 2.7 6 6" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              }
+            >
+              Minor category
+            </FilterLabel>
           </label>
-          <div className={styles.selectWrap}>
+          <div className={`${styles.selectWrap} ${styles.selectWrap_blue}`}>
             <select
               id="filter-minor-category"
               className={styles.filterSelect}
@@ -62,59 +103,135 @@ export function DocumentSearch({
         </div>
 
         <div className={styles.filterField}>
-          <label className={styles.filterLabel} htmlFor="filter-tag-1">
-            Tag 1
+          <label className={styles.filterLabelWrap} htmlFor="filter-tag-1">
+            <FilterLabel
+              tone="green"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 12l-8 8-4-4-6-6 8-8 6 6 4 4z" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              }
+            >
+              Tag 1
+            </FilterLabel>
           </label>
-          <input
-            id="filter-tag-1"
-            type="text"
-            className={styles.filterInput}
-            placeholder="Enter tag"
-            value={filters.tag1}
-            onChange={(event) => onFilterChange('tag1', event.target.value)}
-          />
+          <InputWrap
+            tone="green"
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M20 12l-8 8-4-4-6-6 8-8 6 6 4 4z" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            }
+          >
+            <input
+              id="filter-tag-1"
+              type="text"
+              className={styles.filterInput}
+              placeholder="Enter tag"
+              value={filters.tag1}
+              onChange={(event) => onFilterChange('tag1', event.target.value)}
+            />
+          </InputWrap>
         </div>
 
         <div className={styles.filterField}>
-          <label className={styles.filterLabel} htmlFor="filter-tag-2">
-            Tag 2
+          <label className={styles.filterLabelWrap} htmlFor="filter-tag-2">
+            <FilterLabel
+              tone="teal"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 12l-8 8-4-4-6-6 8-8 6 6 4 4z" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              }
+            >
+              Tag 2
+            </FilterLabel>
           </label>
-          <input
-            id="filter-tag-2"
-            type="text"
-            className={styles.filterInput}
-            placeholder="Enter tag"
-            value={filters.tag2}
-            onChange={(event) => onFilterChange('tag2', event.target.value)}
-          />
+          <InputWrap
+            tone="teal"
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M20 12l-8 8-4-4-6-6 8-8 6 6 4 4z" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            }
+          >
+            <input
+              id="filter-tag-2"
+              type="text"
+              className={styles.filterInput}
+              placeholder="Enter tag"
+              value={filters.tag2}
+              onChange={(event) => onFilterChange('tag2', event.target.value)}
+            />
+          </InputWrap>
         </div>
 
         <div className={styles.filterField}>
-          <label className={styles.filterLabel} htmlFor="filter-from-date">
-            From date
+          <label className={styles.filterLabelWrap} htmlFor="filter-from-date">
+            <FilterLabel
+              tone="orange"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                  <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              }
+            >
+              From date
+            </FilterLabel>
           </label>
-          <input
-            id="filter-from-date"
-            type="date"
-            className={styles.filterInput}
-            value={filters.fromDate}
-            max={filters.toDate || undefined}
-            onChange={(event) => onFilterChange('fromDate', event.target.value)}
-          />
+          <InputWrap
+            tone="orange"
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            }
+          >
+            <input
+              id="filter-from-date"
+              type="date"
+              className={styles.filterInput}
+              value={filters.fromDate}
+              max={filters.toDate || undefined}
+              onChange={(event) => onFilterChange('fromDate', event.target.value)}
+            />
+          </InputWrap>
         </div>
 
         <div className={styles.filterField}>
-          <label className={styles.filterLabel} htmlFor="filter-to-date">
-            To date
+          <label className={styles.filterLabelWrap} htmlFor="filter-to-date">
+            <FilterLabel
+              tone="pink"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                  <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              }
+            >
+              To date
+            </FilterLabel>
           </label>
-          <input
-            id="filter-to-date"
-            type="date"
-            className={styles.filterInput}
-            value={filters.toDate}
-            min={filters.fromDate || undefined}
-            onChange={(event) => onFilterChange('toDate', event.target.value)}
-          />
+          <InputWrap
+            tone="pink"
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            }
+          >
+            <input
+              id="filter-to-date"
+              type="date"
+              className={styles.filterInput}
+              value={filters.toDate}
+              min={filters.fromDate || undefined}
+              onChange={(event) => onFilterChange('toDate', event.target.value)}
+            />
+          </InputWrap>
         </div>
 
         {filtersActive && (

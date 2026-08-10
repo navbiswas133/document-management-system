@@ -101,5 +101,16 @@ export function getFileTone(filename) {
 }
 
 export function getTagTone(tag) {
-  return TAG_TONES[tag] ?? 'gray';
+  if (TAG_TONES[tag]) {
+    return TAG_TONES[tag];
+  }
+
+  const palette = ['green', 'purple', 'orange', 'blue', 'pink', 'teal'];
+  let hash = 0;
+
+  for (let index = 0; index < tag.length; index += 1) {
+    hash = tag.charCodeAt(index) + ((hash << 5) - hash);
+  }
+
+  return palette[Math.abs(hash) % palette.length];
 }

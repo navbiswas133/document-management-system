@@ -25,18 +25,107 @@ function FileIcon({ filename }) {
   return (
     <div className={className} aria-hidden="true">
       {tone === 'image' ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
           <circle cx="9" cy="10" r="2" stroke="currentColor" strokeWidth="2" />
           <path d="M4 16l5-5 4 4 3-3 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
+      ) : tone === 'pdf' ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
+          <path d="M14 4v4h4" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M9 13h6M9 17h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      ) : tone === 'doc' ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
+          <path d="M14 4v4h4M10 13h8M10 17h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
       ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
           <path d="M14 4v4h4" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       )}
     </div>
+  );
+}
+
+function getCategoryTone(category) {
+  const normalized = String(category).trim().toLowerCase();
+
+  if (normalized === 'personal') {
+    return 'personal';
+  }
+
+  if (normalized === 'professional') {
+    return 'professional';
+  }
+
+  if (normalized === 'company') {
+    return 'company';
+  }
+
+  return 'default';
+}
+
+function CategoryBadge({ category }) {
+  const tone = getCategoryTone(category);
+  const className = `${styles.categoryBadge} ${styles[`categoryBadge_${tone}`]}`;
+
+  return (
+    <span className={className}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {tone === 'personal' ? (
+          <path d="M12 12a4 4 0 100-8 4 4 0 000 8zM6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        ) : tone === 'professional' ? (
+          <>
+            <rect x="4" y="8" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+            <path d="M9 8V6a3 3 0 016 0v2" stroke="currentColor" strokeWidth="2" />
+          </>
+        ) : (
+          <path d="M4 20V10l8-6 8 6v10H4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        )}
+      </svg>
+      {category}
+    </span>
+  );
+}
+
+function DepartmentCell({ value }) {
+  return (
+    <span className={styles.departmentCell}>
+      <span className={styles.departmentIcon} aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="2" />
+          <path d="M6 20c0-3.3 2.4-6 6-6s6 2.7 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </span>
+      {value}
+    </span>
+  );
+}
+
+function DateCell({ value }) {
+  return (
+    <span className={styles.dateCell}>
+      <span className={styles.dateIcon} aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+          <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </span>
+      {value ?? '—'}
+    </span>
+  );
+}
+
+function HeaderLabel({ icon, children }) {
+  return (
+    <span className={styles.headerLabel}>
+      {icon}
+      {children}
+    </span>
   );
 }
 
@@ -47,7 +136,7 @@ function ActionIcons({ documentId, name, fileUrl, document }) {
     <div className={styles.actionIcons}>
       <button
         type="button"
-        className={styles.iconAction}
+        className={`${styles.iconAction} ${styles.iconAction_preview}`}
         aria-label={`Preview ${name}`}
         disabled={!canAccessFile}
         onClick={() => openDocumentPreview(fileUrl)}
@@ -60,7 +149,7 @@ function ActionIcons({ documentId, name, fileUrl, document }) {
       <Link
         to={`/documents/${documentId}`}
         state={{ document }}
-        className={styles.iconAction}
+        className={`${styles.iconAction} ${styles.iconAction_view}`}
         aria-label={`View details for ${name}`}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -69,7 +158,7 @@ function ActionIcons({ documentId, name, fileUrl, document }) {
       </Link>
       <button
         type="button"
-        className={styles.iconAction}
+        className={`${styles.iconAction} ${styles.iconAction_download}`}
         aria-label={`Download ${name}`}
         disabled={!canAccessFile}
         onClick={() => downloadDocument(fileUrl, name)}
@@ -129,11 +218,63 @@ export function DocumentList({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th scope="col">File Name</th>
-              <th scope="col">Category</th>
-              <th scope="col">Name / Department</th>
-              <th scope="col">Date</th>
-              <th scope="col">Tags</th>
+              <th scope="col">
+                <HeaderLabel
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  }
+                >
+                  File Name
+                </HeaderLabel>
+              </th>
+              <th scope="col">
+                <HeaderLabel
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  }
+                >
+                  Category
+                </HeaderLabel>
+              </th>
+              <th scope="col">
+                <HeaderLabel
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="2" />
+                      <path d="M6 20c0-3.3 2.4-6 6-6s6 2.7 6 6" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  }
+                >
+                  Name / Department
+                </HeaderLabel>
+              </th>
+              <th scope="col">
+                <HeaderLabel
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
+                      <path d="M8 3v4M16 3v4M4 11h16" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  }
+                >
+                  Date
+                </HeaderLabel>
+              </th>
+              <th scope="col">
+                <HeaderLabel
+                  icon={
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M20 12l-8 8-4-4-6-6 8-8 6 6 4 4z" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  }
+                >
+                  Tags
+                </HeaderLabel>
+              </th>
               <th scope="col">
                 <span className={styles.actionsHeader}>Actions</span>
               </th>
@@ -150,21 +291,29 @@ export function DocumentList({
               const fileUrl = doc.file_url;
 
               return (
-                <tr key={documentId}>
+                <tr key={documentId} className={styles.tableRow}>
                   <td data-label="File Name">
                     <div className={styles.fileNameCell}>
                       <FileIcon filename={name} />
                       <span className={styles.fileName}>{name}</span>
                     </div>
                   </td>
-                  <td data-label="Category" className={styles.mutedCell}>
-                    {category}
+                  <td data-label="Category">
+                    {category === '—' ? (
+                      <span className={styles.mutedCell}>—</span>
+                    ) : (
+                      <CategoryBadge category={category} />
+                    )}
                   </td>
-                  <td data-label="Name / Department" className={styles.mutedCell}>
-                    {department}
+                  <td data-label="Name / Department">
+                    {department === '—' ? (
+                      <span className={styles.mutedCell}>—</span>
+                    ) : (
+                      <DepartmentCell value={department} />
+                    )}
                   </td>
-                  <td data-label="Date" className={styles.mutedCell}>
-                    {date ?? '—'}
+                  <td data-label="Date">
+                    <DateCell value={date} />
                   </td>
                   <td data-label="Tags">
                     {tags.length === 0 ? (
