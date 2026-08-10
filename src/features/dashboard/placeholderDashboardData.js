@@ -9,5 +9,4 @@ export const dashboardUser = {
 export const quickActions = [
   { id: 'upload', label: 'Upload Document', to: '/documents/upload' },
   { id: 'search', label: 'Search Documents', to: '/documents' },
-  { id: 'user', label: 'Create User', to: '/admin' },
 ];

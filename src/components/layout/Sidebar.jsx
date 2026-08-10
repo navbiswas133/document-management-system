@@ -1,17 +1,18 @@
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { isAdminPortal } from '../../constants/adminAuth';
 import { BRANDING } from '../../constants/branding';
 import { logout } from '../../store/authSlice';
 import styles from './Sidebar.module.css';
 
-const mainLinks = [
+const userLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { to: '/documents', label: 'Documents', icon: 'folder', end: true },
   { to: '/documents/upload', label: 'Upload', icon: 'upload' },
 ];
 
 const adminLinks = [
-  { to: '/admin', label: 'Admin', icon: 'admin' },
+  { to: '/admin', label: 'Create user', icon: 'admin', end: true },
 ];
 
 function NavIcon({ name }) {
@@ -76,6 +77,8 @@ export function Sidebar({
 }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const auth = useSelector((state) => state.auth);
+  const navLinks = isAdminPortal(auth) ? adminLinks : userLinks;
 
   function handleLogout() {
     dispatch(logout());
@@ -110,27 +113,7 @@ export function Sidebar({
           </div>
 
           <nav className={styles.nav}>
-            {mainLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.end}
-                title={isCollapsed ? link.label : undefined}
-                className={({ isActive }) =>
-                  isActive ? `${styles.link} ${styles.linkActive}` : styles.link
-                }
-                onClick={onClose}
-              >
-                <span className={styles.linkIcon}>
-                  <NavIcon name={link.icon} />
-                </span>
-                <span className={styles.linkLabel}>{link.label}</span>
-              </NavLink>
-            ))}
-
-            <div className={styles.navDivider} aria-hidden="true" />
-
-            {adminLinks.map((link) => (
+            {navLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}

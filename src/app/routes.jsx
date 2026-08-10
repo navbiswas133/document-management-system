@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ProtectedLayout } from '../components/auth/ProtectedLayout';
+import { AdminProtectedLayout } from '../components/auth/AdminProtectedLayout';
+import { UserProtectedLayout } from '../components/auth/UserProtectedLayout';
 import { AppLayout } from '../components/layout/AppLayout';
 import { LoginPage } from '../features/auth/LoginPage';
 import { VerifyOtpPage } from '../features/auth/VerifyOtpPage';
@@ -16,12 +17,17 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
 
-      <Route element={<ProtectedLayout />}>
+      <Route element={<UserProtectedLayout />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/documents/upload" element={<UploadDocumentPage />} />
           <Route path="/documents/:documentId" element={<DocumentDetailsPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
+        </Route>
+      </Route>
+
+      <Route element={<AdminProtectedLayout />}>
+        <Route element={<AppLayout />}>
           <Route path="/admin" element={<AdminUserCreationPage />} />
         </Route>
       </Route>

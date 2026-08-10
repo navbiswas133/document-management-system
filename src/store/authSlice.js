@@ -12,6 +12,7 @@ const initialState = {
   user_id: persisted?.user_id ?? null,
   user_name: persisted?.user_name ?? null,
   roles: persisted?.roles ?? [],
+  portal: persisted?.portal ?? 'user',
 };
 
 const authSlice = createSlice({
@@ -19,18 +20,26 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials(state, action) {
-      const { token, user_id, user_name, roles } = action.payload;
+      const {
+        token,
+        user_id,
+        user_name,
+        roles,
+        portal = 'user',
+      } = action.payload;
       state.token = token;
       state.user_id = user_id;
       state.user_name = user_name;
       state.roles = roles;
-      saveAuth({ token, user_id, user_name, roles });
+      state.portal = portal;
+      saveAuth({ token, user_id, user_name, roles, portal });
     },
     logout(state) {
       state.token = null;
       state.user_id = null;
       state.user_name = null;
       state.roles = [];
+      state.portal = 'user';
       clearAuthStorage();
     },
   },

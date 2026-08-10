@@ -5,6 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '../../lib/apiResponse';
+import {
+  ADMIN_OTP,
+  ADMIN_SESSION_TOKEN,
+  isAdminMobile,
+} from '../../constants/adminAuth';
 import { BRANDING } from '../../constants/branding';
 import { setCredentials } from '../../store/authSlice';
 import { generateOTP, validateOTP } from './authApi';
@@ -235,6 +240,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
+  const portal = useSelector((state) => state.auth.portal);
   const otpRefs = useRef([]);
 
   const [mobileNumber, setMobileNumber] = useState('');
@@ -258,9 +264,9 @@ export function LoginPage() {
 
   useEffect(() => {
     if (token) {
-      navigate('/dashboard', { replace: true });
+      navigate(portal === 'admin' ? '/admin' : '/dashboard', { replace: true });
     }
-  }, [token, navigate]);
+  }, [token, portal, navigate]);
 
   useEffect(() => {
     if (!showOtpStep || resendSeconds <= 0) {
@@ -296,6 +302,16 @@ export function LoginPage() {
     setIsSendingOtp(true);
 
     try {
+      if (isAdminMobile(mobile)) {
+        toast.success('OTP sent successfully');
+        setMobileNumber(mobile);
+        setOtpDigits(emptyOtpDigits());
+        setShowOtpStep(true);
+        setResendSeconds(RESEND_SECONDS);
+        window.setTimeout(() => otpRefs.current[0]?.focus(), 0);
+        return;
+      }
+
       await generateOTP(mobile);
       toast.success('OTP sent successfully');
       setMobileNumber(mobile);
@@ -384,6 +400,27 @@ export function LoginPage() {
     setIsVerifying(true);
 
     try {
+      if (isAdminMobile(mobileNumber)) {
+        if (otp !== ADMIN_OTP) {
+          setOtpError('Invalid OTP. Please try again.');
+          toast.error('Invalid OTP. Please try again.');
+          return;
+        }
+
+        dispatch(
+          setCredentials({
+            token: ADMIN_SESSION_TOKEN,
+            user_id: 'admin',
+            user_name: 'Admin',
+            roles: ['Admin'],
+            portal: 'admin',
+          }),
+        );
+        toast.success('Admin login successful');
+        navigate('/admin');
+        return;
+      }
+
       const authData = await validateOTP(mobileNumber, otp);
       dispatch(
         setCredentials({
@@ -391,6 +428,7 @@ export function LoginPage() {
           user_id: authData.user_id,
           user_name: authData.user_name,
           roles: authData.roles ?? [],
+          portal: 'user',
         }),
       );
       toast.success('Login successful');

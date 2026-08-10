@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ADMIN_SESSION_TOKEN } from '../constants/adminAuth';
 import { getAuthToken } from '../features/auth/authStorage';
 import { isAbortError } from './apiResponse';
 import { notifyApiError } from './apiToast';
@@ -11,7 +12,11 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = getAuthToken();
 
-  if (token && config.headers.token === undefined) {
+  if (
+    token
+    && token !== ADMIN_SESSION_TOKEN
+    && config.headers.token === undefined
+  ) {
     config.headers.token = token;
   }
 
