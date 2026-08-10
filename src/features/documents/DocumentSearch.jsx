@@ -3,34 +3,15 @@ import styles from './DocumentSearch.module.css';
 const DEFAULT_MAJOR_CATEGORIES = ['Company', 'Personal', 'Professional'];
 
 export function DocumentSearch({
-  searchQuery,
   filters,
   majorCategoryOptions,
   minorCategoryOptions,
   filtersActive,
-  onSearchChange,
   onFilterChange,
   onClear,
 }) {
   return (
-    <section className={styles.panel} aria-label="File search">
-      <div className={styles.searchRow}>
-        <div className={styles.searchField}>
-          <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-            <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <input
-            type="search"
-            className={styles.searchInput}
-            placeholder="Search documents…"
-            aria-label="Search documents"
-            value={searchQuery}
-            onChange={(event) => onSearchChange(event.target.value)}
-          />
-        </div>
-      </div>
-
+    <section className={styles.panel} aria-label="Document filters">
       <div className={styles.filtersRow}>
         <div className={styles.filterField}>
           <label className={styles.filterLabel} htmlFor="filter-major-category">

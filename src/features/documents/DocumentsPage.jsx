@@ -286,11 +286,19 @@ export function DocumentsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.resultsHeader}>
-        <div className={styles.resultsHeading}>
-          <h1 className={styles.title}>Search Results</h1>
-          <p className={styles.resultCount}>
-            {isLoading ? 'Loading…' : `${totalCount} results found`}
-          </p>
+        <div className={styles.searchField}>
+          <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+            <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            className={styles.searchInput}
+            placeholder="Search documents…"
+            aria-label="Search documents"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
         </div>
 
         <div className={styles.headerActions}>
@@ -319,26 +327,14 @@ export function DocumentsPage() {
                   : 'Preparing ZIP…'
               : 'Download All (ZIP)'}
           </button>
-          <button type="button" className={styles.outlineButton} disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            Export
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
         </div>
       </header>
 
       <DocumentSearch
-        searchQuery={searchQuery}
         filters={filters}
         majorCategoryOptions={majorCategoryOptions}
         minorCategoryOptions={minorCategoryOptions}
         filtersActive={filtersActive}
-        onSearchChange={setSearchQuery}
         onFilterChange={handleFilterChange}
         onClear={handleClearFilters}
       />
