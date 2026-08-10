@@ -1,6 +1,7 @@
 import { useRef, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { getApiErrorMessage, getResponseSuccessMessage } from '../../lib/apiResponse';
 import { fetchDocumentTags, saveDocumentEntry } from './documentsApi';
 import { formatDateForApi } from './searchFilters';
@@ -144,13 +145,10 @@ export function UploadDocumentPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState(null);
   const [errors, setErrors] = useState({});
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [existingTags, setExistingTags] = useState([]);
-  const [tagsError, setTagsError] = useState('');
   const [isLoadingTags, setIsLoadingTags] = useState(false);
   const [showTagList, setShowTagList] = useState(false);
 
@@ -163,9 +161,8 @@ export function UploadDocumentPage() {
     try {
       const tags = await fetchDocumentTags(term);
       setExistingTags(tags);
-      setTagsError('');
     } catch (error) {
-      setTagsError(getApiErrorMessage(error, 'Unable to load tags.'));
+      toast.error(getApiErrorMessage(error, 'Unable to load tags.'));
     } finally {
       setIsLoadingTags(false);
     }
@@ -416,16 +413,13 @@ export function UploadDocumentPage() {
 
     const nextErrors = validateForm(form, file);
     setErrors(nextErrors);
-    setStatusMessage('');
-    setStatusType('');
 
     if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
     if (!userId) {
-      setStatusMessage('Authentication required. Please log in again.');
-      setStatusType('error');
+      toast.error('Authentication required. Please log in again.');
       return;
     }
 
@@ -443,16 +437,14 @@ export function UploadDocumentPage() {
       });
 
       resetFormAfterSuccess();
-      setStatusMessage(
-        getResponseSuccessMessage(response, 'Document uploaded successfully.'),
+      toast.success(
+        getResponseSuccessMessage(response, 'Document uploaded successfully'),
       );
-      setStatusType('success');
       navigate('/documents');
     } catch (uploadError) {
-      setStatusMessage(
+      toast.error(
         getApiErrorMessage(uploadError, 'Unable to upload document. Please try again.'),
       );
-      setStatusType('error');
     } finally {
       setIsUploading(false);
     }
@@ -652,9 +644,6 @@ export function UploadDocumentPage() {
               )}
             </div>
 
-            {tagsError && (
-              <p className={styles.error}>{tagsError}</p>
-            )}
             {errors.tags && (
               <p id="tags-error" className={styles.error}>
                 {errors.tags}
@@ -791,17 +780,6 @@ export function UploadDocumentPage() {
             </p>
           )}
         </div>
-
-        {statusMessage && (
-          <p
-            className={
-              statusType === 'success' ? styles.successNote : styles.validationNote
-            }
-            role={statusType === 'error' ? 'alert' : 'status'}
-          >
-            {statusMessage}
-          </p>
-        )}
 
         <div className={styles.actions}>
           <button

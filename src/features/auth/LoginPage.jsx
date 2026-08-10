@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { getApiErrorMessage } from '../../lib/apiResponse';
 import { setCredentials } from '../../store/authSlice';
 import { generateOTP, validateOTP } from './authApi';
@@ -134,7 +135,6 @@ export function LoginPage() {
   const [showOtpStep, setShowOtpStep] = useState(false);
   const [otpDigits, setOtpDigits] = useState(emptyOtpDigits());
   const [otpError, setOtpError] = useState('');
-  const [apiError, setApiError] = useState('');
   const [resendSeconds, setResendSeconds] = useState(0);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -181,24 +181,22 @@ export function LoginPage() {
     if (showOtpStep) {
       resetOtpStep();
     }
-
-    setApiError('');
   }
 
   async function sendOtpToMobile(mobile) {
-    setApiError('');
     setOtpError('');
     setIsSendingOtp(true);
 
     try {
       await generateOTP(mobile);
+      toast.success('OTP sent successfully');
       setMobileNumber(mobile);
       setOtpDigits(emptyOtpDigits());
       setShowOtpStep(true);
       setResendSeconds(RESEND_SECONDS);
       window.setTimeout(() => otpRefs.current[0]?.focus(), 0);
     } catch (error) {
-      setApiError(
+      toast.error(
         getApiErrorMessage(error, 'Unable to send OTP. Please try again.'),
       );
     } finally {
@@ -225,7 +223,6 @@ export function LoginPage() {
 
     setOtpDigits(nextDigits);
     setOtpError('');
-    setApiError('');
 
     if (digit && index < OTP_LENGTH - 1) {
       otpRefs.current[index + 1]?.focus();
@@ -276,7 +273,6 @@ export function LoginPage() {
     }
 
     setOtpError('');
-    setApiError('');
     setIsVerifying(true);
 
     try {
@@ -289,9 +285,10 @@ export function LoginPage() {
           roles: authData.roles ?? [],
         }),
       );
+      toast.success('Login successful');
       navigate('/dashboard');
     } catch (error) {
-      setApiError(
+      toast.error(
         getApiErrorMessage(error, 'Unable to verify OTP. Please try again.'),
       );
     } finally {
@@ -365,9 +362,6 @@ export function LoginPage() {
               </form>
             )}
 
-            {apiError && (
-              <p className={styles.apiError} role="alert">{apiError}</p>
-            )}
           </div>
 
           {showOtpStep && (

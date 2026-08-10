@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import debounce from 'lodash/debounce';
+import { toast } from 'sonner';
 import { getApiErrorMessage } from '../../lib/apiResponse';
 import {
   DocumentSearch,
@@ -55,9 +56,6 @@ export function DocumentsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [apiError, setApiError] = useState('');
-  const [downloadNotice, setDownloadNotice] = useState('');
-  const [downloadNoticeType, setDownloadNoticeType] = useState('success');
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [zipProgress, setZipProgress] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,14 +83,13 @@ export function DocumentsPage() {
     if (!token) {
       setDocuments([]);
       setTotalCount(0);
-      setApiError('Authentication required.');
+      toast.error('Authentication required.');
       setIsLoading(false);
       abortControllerRef.current = null;
       return;
     }
 
     setIsLoading(true);
-    setApiError('');
 
     const normalizedSearch = searchValue.trim();
     const requestBody = buildSearchRequestBody({
@@ -125,7 +122,7 @@ export function DocumentsPage() {
 
       setDocuments([]);
       setTotalCount(0);
-      setApiError(
+      toast.error(
         getApiErrorMessage(loadError, 'Unable to load documents. Please try again.'),
       );
     } finally {
@@ -217,8 +214,6 @@ export function DocumentsPage() {
     }
 
     setIsDownloadingZip(true);
-    setDownloadNotice('');
-    setDownloadNoticeType('success');
     setZipProgress({ completed: 0, total: totalCount });
 
     try {
@@ -232,17 +227,14 @@ export function DocumentsPage() {
       });
 
       if (result.failedCount > 0) {
-        setDownloadNoticeType('success');
-        setDownloadNotice(
+        toast.success(
           `ZIP downloaded with ${result.downloadedCount} file(s). ${result.failedCount} file(s) could not be included.`,
         );
       } else {
-        setDownloadNoticeType('success');
-        setDownloadNotice(`ZIP downloaded with ${result.downloadedCount} file(s).`);
+        toast.success(`ZIP downloaded with ${result.downloadedCount} file(s).`);
       }
     } catch (downloadError) {
-      setDownloadNoticeType('error');
-      setDownloadNotice(
+      toast.error(
         getApiErrorMessage(downloadError, 'Unable to download ZIP. Please try again.'),
       );
     } finally {
@@ -338,25 +330,6 @@ export function DocumentsPage() {
         onFilterChange={handleFilterChange}
         onClear={handleClearFilters}
       />
-
-      {apiError && (
-        <p className={styles.apiNotice} role="alert">
-          {apiError}
-        </p>
-      )}
-
-      {downloadNotice && (
-        <p
-          className={
-            downloadNoticeType === 'error'
-              ? styles.apiNotice
-              : styles.downloadNotice
-          }
-          role={downloadNoticeType === 'error' ? 'alert' : 'status'}
-        >
-          {downloadNotice}
-        </p>
-      )}
 
       <div className={styles.listArea}>
         {isLoading && (
