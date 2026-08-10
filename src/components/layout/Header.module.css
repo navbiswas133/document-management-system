@@ -2,9 +2,11 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 10px 16px;
+  min-height: var(--layout-chrome-height);
+  box-sizing: border-box;
+  padding: 0 16px;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--layout-chrome-border);
   flex-shrink: 0;
 }
 
@@ -45,7 +47,7 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 8px 12px;
+    padding: 0 12px;
   }
 
   .profileName {

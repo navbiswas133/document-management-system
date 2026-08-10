@@ -20,6 +20,9 @@
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
+
+  --layout-chrome-height: 56px;
+  --layout-chrome-border: #e2e8f0;
 }
 
 * {
