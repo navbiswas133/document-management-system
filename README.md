@@ -19,9 +19,12 @@ document-management-system/
 │   ├── features/            # auth · dashboard · documents · admin
 │   ├── lib/                 # Axios client, API helpers
 │   ├── store/               # Redux (auth)
-│   └── styles/              # Global CSS
+│   ├── styles/              # Global CSS
+│   └── test/                # Test setup, helpers, Axios mocks
 ├── index.html
-├── vite.config.js           # Dev proxy for API + S3
+├── vite.config.js           # Dev proxy for API + S3; Vitest config
+├── playwright.config.js     # Playwright E2E (webServer + test dir)
+├── tests/e2e/               # Playwright specs
 ├── eslint.config.js
 ├── package.json
 └── package-lock.json
@@ -135,10 +138,77 @@ Backend: `searchDocumentEntry`, `documentTags`, `saveDocumentEntry`
 - Admin user creation API integration
 - Production-grade admin auth (currently hardcoded mobile/OTP)
 - `/verify-otp` route (redirects to `/login`)
-- Automated tests (no test runner in `package.json`)
 - Deployment config (no Dockerfile / Vercel / Netlify files)
 
 </details>
+
+---
+
+## Testing
+
+Automated tests use **Vitest**, **React Testing Library**, and **Playwright**. They do **not** call the real backend, use real OTPs, or use real credentials.
+
+### Unit and component tests
+
+React components are tested with Vitest + React Testing Library + jsdom.
+
+| Area | Location |
+|------|----------|
+| Login | `src/features/auth/__tests__/LoginPage.test.jsx` |
+| Documents UI | `src/features/documents/__tests__/` |
+| Admin UI | `src/features/admin/__tests__/AdminUserCreationPage.test.jsx` |
+
+```bash
+npm test          # Vitest watch mode
+npm run test:run  # Single run (CI-friendly)
+```
+
+### API / service tests (mocked)
+
+Auth and document API modules are tested against a **mocked Axios client** — no network requests.
+
+| Area | Location |
+|------|----------|
+| Auth APIs | `src/features/auth/__tests__/authApi.test.js` |
+| Document APIs | `src/features/documents/__tests__/documentsApi.test.js` |
+
+Shared mock helpers: `src/test/mockApiClient.js`, `src/lib/__mocks__/axios.js`
+
+```bash
+npm run test:run
+```
+
+### Playwright E2E tests (intercepted APIs)
+
+End-to-end tests run in a real browser. Playwright starts the Vite dev server automatically and **intercepts** document-management API requests with test-only responses (Generate OTP, Validate OTP, Search Documents). No real backend is contacted.
+
+| Test | Location |
+|------|----------|
+| Login → Dashboard → Documents | `tests/e2e/login-documents.spec.js` |
+
+First-time setup (if browsers are not installed):
+
+```bash
+npx playwright install chromium
+```
+
+```bash
+npm run test:e2e
+```
+
+### Build verification
+
+```bash
+npm run build
+```
+
+### Full verification (recommended before review)
+
+```bash
+npm run test:run
+npm run test:e2e
+npm run build
+```
 
 ---
 
@@ -216,6 +286,9 @@ src/
 ```bash
 npm run serve-production   # Build with .env.production + preview (use this)
 npm run lint               # ESLint
+npm run test:run           # Unit, component, and API tests (mocked)
+npm run test:e2e           # Playwright E2E (intercepted APIs)
+npm run build              # Production build check
 ```
 
 Other scripts for local development:

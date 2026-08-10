@@ -2,16 +2,38 @@ import { test, expect } from '@playwright/test';
 
 const TEST_MOBILE = '9000000001';
 const TEST_OTP = '000000';
-const FAKE_E2E_TOKEN = 'e2e-test-token-fake';
 
-const MOCK_DOCUMENT = {
-  document_id: 'e2e-doc-1',
-  major_head: 'Personal',
-  minor_head: 'John',
-  document_date: '2024-01-15',
-  file_url: 'https://example.com/files/e2e-sample.pdf',
-  document_remarks: 'E2E Sample Document',
-  total_count: 1,
+const MOCK_VALIDATE_OTP_RESPONSE = {
+  status: true,
+  data: {
+    token: 'test-token',
+    user_id: 'test_user',
+    user_name: 'Test User',
+    roles: [
+      {
+        id: 1,
+        role: 'User',
+        role_slug: 'USER',
+        home: 'document-management',
+      },
+    ],
+  },
+};
+
+const MOCK_SEARCH_RESPONSE = {
+  status: true,
+  recordsTotal: 1,
+  data: [
+    {
+      document_id: 'test-doc-1',
+      major_head: 'Personal',
+      minor_head: 'John',
+      document_date: '2024-01-15',
+      file_url: 'https://example.com/files/test-sample.pdf',
+      document_remarks: 'Test Search Document',
+      total_count: 1,
+    },
+  ],
 };
 
 function fulfillJson(route, body) {
@@ -38,32 +60,12 @@ async function mockDocumentManagementApi(page) {
     }
 
     if (url.includes('/validateOTP')) {
-      await fulfillJson(route, {
-        status: true,
-        data: {
-          token: FAKE_E2E_TOKEN,
-          user_id: 'e2e-user-1',
-          user_name: 'E2E Test User',
-          roles: ['User'],
-        },
-      });
+      await fulfillJson(route, MOCK_VALIDATE_OTP_RESPONSE);
       return;
     }
 
     if (url.includes('/searchDocumentEntry')) {
-      await fulfillJson(route, {
-        status: true,
-        recordsTotal: 1,
-        data: [MOCK_DOCUMENT],
-      });
-      return;
-    }
-
-    if (url.includes('/documentTags')) {
-      await fulfillJson(route, {
-        status: true,
-        data: [{ label: 'finance', id: 'finance' }],
-      });
+      await fulfillJson(route, MOCK_SEARCH_RESPONSE);
       return;
     }
 
@@ -81,7 +83,7 @@ test.beforeEach(async ({ page }) => {
   await mockDocumentManagementApi(page);
 });
 
-test('authenticated user can log in and view mocked documents', async ({ page }) => {
+test('user journey: login, dashboard, documents search results', async ({ page }) => {
   await page.goto('/login');
 
   await expect(page.getByLabel('Mobile Number')).toBeVisible();
@@ -97,8 +99,8 @@ test('authenticated user can log in and view mocked documents', async ({ page })
   await page.getByRole('button', { name: /^verify otp$/i }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole('heading', { name: 'Recent Documents' })).toBeVisible();
-  await expect(page.getByText('Unable to load recent documents')).not.toBeVisible();
+  await expect(page.getByText('Test User')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Quick Actions' })).toBeVisible();
 
   await page
     .getByRole('complementary', { name: 'Main navigation' })
@@ -106,8 +108,14 @@ test('authenticated user can log in and view mocked documents', async ({ page })
     .click();
 
   await expect(page).toHaveURL(/\/documents$/);
+  await expect(page.getByLabel('Search documents')).toBeVisible();
   await expect(page.getByText('Loading documents…')).not.toBeVisible();
-  await expect(page.getByText('E2E Sample Document')).toBeVisible();
+  await expect(page.getByText('Test Search Document')).toBeVisible();
+
+  await page.getByLabel('Search documents').fill('Test');
+  await expect(page.getByText('Test Search Document')).toBeVisible();
+
   await expect(page.getByText('No documents found')).not.toBeVisible();
   await expect(page.getByText('Authentication required.')).not.toBeVisible();
+  await expect(page.getByText('Unable to load documents.')).not.toBeVisible();
 });
