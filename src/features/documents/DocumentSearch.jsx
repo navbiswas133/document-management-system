@@ -1,3 +1,4 @@
+import { handleDateFieldClick } from '../../lib/datePickerField';
 import styles from './DocumentSearch.module.css';
 
 const DEFAULT_MAJOR_CATEGORIES = ['Company', 'Personal', 'Professional'];
@@ -13,9 +14,16 @@ function FilterLabel({ icon, tone, children }) {
   );
 }
 
-function InputWrap({ icon, tone, children }) {
+function InputWrap({ icon, tone, children, isDateField = false }) {
+  const wrapClassName = isDateField
+    ? `${styles.inputWrap} dateFieldWrap`
+    : styles.inputWrap;
+
   return (
-    <div className={styles.inputWrap}>
+    <div
+      className={wrapClassName}
+      onClick={isDateField ? handleDateFieldClick : undefined}
+    >
       <span className={`${styles.fieldIcon} ${styles[`fieldIcon_${tone}`]}`} aria-hidden="true">
         {icon}
       </span>
@@ -182,6 +190,7 @@ export function DocumentSearch({
           </label>
           <InputWrap
             tone="orange"
+            isDateField
             icon={
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
@@ -216,6 +225,7 @@ export function DocumentSearch({
           </label>
           <InputWrap
             tone="pink"
+            isDateField
             icon={
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />

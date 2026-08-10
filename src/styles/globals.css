@@ -65,6 +65,26 @@ button:disabled {
   outline-offset: 2px;
 }
 
+input[type='date'] {
+  position: relative;
+  cursor: pointer;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dateFieldWrap {
+  cursor: pointer;
+}
+
 /* Sonner toast styles */
 [data-sonner-toast][data-type='success'] {
   background: var(--toast-success-bg) !important;

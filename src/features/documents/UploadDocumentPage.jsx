@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { getApiErrorMessage, getResponseSuccessMessage } from '../../lib/apiResponse';
-import { fetchDocumentTags, saveDocumentEntry } from './documentsApi';
+import { handleDateFieldClick } from '../../lib/datePickerField';
 import { formatDateForApi } from './searchFilters';
 import {
   getDefaultMinorHead,
@@ -472,7 +472,7 @@ export function UploadDocumentPage() {
             <label className={styles.label} htmlFor="document-date">
               Date <span className={styles.required}>*</span>
             </label>
-            <div className={styles.inputWrap}>
+            <div className={`${styles.inputWrap} dateFieldWrap`} onClick={handleDateFieldClick}>
               <input
                 id="document-date"
                 name="documentDate"
