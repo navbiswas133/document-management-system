@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { isAdminPortal } from '../../constants/adminAuth';
 import { BRANDING } from '../../constants/branding';
 import { logout } from '../../store/authSlice';
+import { useMobileNav } from './useMobileNav';
 import styles from './Header.module.css';
 
 function getUserInitials(name) {
@@ -40,13 +42,16 @@ export function Header() {
   const navigate = useNavigate();
   const menuRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isMobileNav = useMobileNav();
 
+  const auth = useSelector((state) => state.auth);
   const userName = useSelector((state) => state.auth.user_name);
   const userId = useSelector((state) => state.auth.user_id);
   const roles = useSelector((state) => state.auth.roles);
   const initials = getUserInitials(userName);
   const roleList = normalizeRoles(roles);
   const primaryRole = roleList[0] ?? 'User';
+  const homePath = isAdminPortal(auth) ? '/admin' : '/dashboard';
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -86,6 +91,16 @@ export function Header() {
 
   return (
     <header className={styles.header}>
+      {isMobileNav && (
+        <Link to={homePath} className={styles.headerBrand}>
+          <img
+            src={BRANDING.logo}
+            alt={BRANDING.name}
+            className={styles.headerBrandLogo}
+          />
+        </Link>
+      )}
+
       <div className={styles.profileMenu} ref={menuRef}>
         <button
           type="button"

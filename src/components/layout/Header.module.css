@@ -2,12 +2,30 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 12px;
   min-height: var(--layout-chrome-height);
   box-sizing: border-box;
   padding: 0 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--layout-chrome-border);
   flex-shrink: 0;
+}
+
+.headerBrand {
+  display: none;
+  align-items: center;
+  min-width: 0;
+  margin-right: auto;
+  flex-shrink: 1;
+}
+
+.headerBrandLogo {
+  display: block;
+  width: auto;
+  max-width: min(120px, 38vw);
+  max-height: 28px;
+  height: auto;
+  object-fit: contain;
 }
 
 .profileMenu {
@@ -312,8 +330,20 @@
     padding: 0 12px;
   }
 
+  .headerBrand {
+    display: flex;
+  }
+
   .profile {
-    max-width: 180px;
+    max-width: none;
+    height: 36px;
+    padding: 0 6px 0 2px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.625rem;
   }
 }
 

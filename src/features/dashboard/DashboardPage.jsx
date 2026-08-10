@@ -1,80 +1,25 @@
 import { Link } from 'react-router-dom';
+import { FileIcon, QuickActionIcon, StatIcon } from './dashboardIcons';
 import { quickActions } from './placeholderDashboardData';
 import { getTagBarWidth } from './topTagsFeature';
 import { useDashboardData } from './useDashboardData';
 import styles from './DashboardPage.module.css';
 
-function StatIcon({ tone }) {
-  const className = `${styles.statIcon} ${styles[`statIcon_${tone}`]}`;
-
+function PanelHeader({ title, id, linkTo, linkLabel = 'View all' }) {
   return (
-    <div className={className} aria-hidden="true">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M4 20V10M10 20V4M16 20v-6M22 20V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    </div>
-  );
-}
-
-function FileIcon({ type }) {
-  const className = `${styles.fileIcon} ${styles[`fileIcon_${type}`]}`;
-
-  return (
-    <div className={className} aria-hidden="true">
-      {type === 'image' ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-          <circle cx="9" cy="10" r="2" stroke="currentColor" strokeWidth="2" />
-          <path d="M4 16l5-5 4 4 3-3 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      ) : type === 'doc' ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
-          <path d="M14 4v4h4M10 13h8M10 17h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
-          <path d="M14 4v4h4" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-        </svg>
+    <div className={styles.panelHeader}>
+      <h2 id={id} className={styles.panelTitle}>{title}</h2>
+      {linkTo && (
+        <Link to={linkTo} className={styles.panelLink}>
+          {linkLabel}
+        </Link>
       )}
     </div>
   );
 }
 
-function QuickActionIcon({ id }) {
-  const icons = {
-    upload: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-    search: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-        <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-    user: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="2" />
-        <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-    tags: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M20 12l-8 8-4-4-6-6 8-8 6 6 4 4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      </svg>
-    ),
-    reports: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M4 20V10M10 20V4M16 20v-6M22 20V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  };
-
-  return icons[id] ?? icons.search;
+function PanelMessage({ children }) {
+  return <p className={styles.panelMessage}>{children}</p>;
 }
 
 export function DashboardPage() {
@@ -95,7 +40,9 @@ export function DashboardPage() {
         {statCards.map((card) => (
           <li key={card.id}>
             <article className={styles.statCard}>
-              <StatIcon tone={card.tone} />
+              <StatIcon
+                className={`${styles.statIcon} ${styles[`statIcon_${card.tone}`]}`}
+              />
               <div className={styles.statBody}>
                 <p className={styles.statLabel}>{card.label}</p>
                 <p className={styles.statValue}>{card.value}</p>
@@ -107,29 +54,24 @@ export function DashboardPage() {
 
       <div className={styles.middleGrid}>
         <section className={styles.panel} aria-labelledby="recent-docs-heading">
-          <div className={styles.panelHeader}>
-            <h2 id="recent-docs-heading" className={styles.panelTitle}>
-              Recent Documents
-            </h2>
-            <Link to="/documents" className={styles.panelLink}>
-              View All
-            </Link>
-          </div>
+          <PanelHeader
+            id="recent-docs-heading"
+            title="Recent Documents"
+            linkTo="/documents"
+            linkLabel="View All"
+          />
 
           {isLoadingRecentDocuments && (
-            <p className={styles.tagPanelMessage}>Loading recent documents…</p>
+            <PanelMessage>Loading recent documents…</PanelMessage>
           )}
 
-          {!isLoadingRecentDocuments &&
-            !hasRecentDocumentsError &&
-            recentDocuments.length === 0 && (
-              <p className={styles.tagPanelMessage}>No documents available.</p>
-            )}
+          {!isLoadingRecentDocuments && !hasRecentDocumentsError && recentDocuments.length === 0 && (
+            <PanelMessage>No documents available.</PanelMessage>
+          )}
 
-          {!isLoadingRecentDocuments &&
-            hasRecentDocumentsError && (
-              <p className={styles.tagPanelMessage}>Unable to load recent documents.</p>
-            )}
+          {!isLoadingRecentDocuments && hasRecentDocumentsError && (
+            <PanelMessage>Unable to load recent documents.</PanelMessage>
+          )}
 
           {!isLoadingRecentDocuments &&
             !hasRecentDocumentsError &&
@@ -137,15 +79,20 @@ export function DashboardPage() {
               <ul className={styles.docList}>
                 {recentDocuments.map((doc) => (
                   <li key={doc.id} className={styles.docRow}>
-                    <FileIcon type={doc.type} />
+                    <FileIcon
+                      type={doc.type}
+                      className={`${styles.fileIcon} ${styles[`fileIcon_${doc.type}`]}`}
+                    />
                     <div className={styles.docMain}>
                       <p className={styles.docName}>{doc.name}</p>
                       <p className={styles.docMeta}>
                         {doc.category} • {doc.subcategory}
                       </p>
                     </div>
-                    <p className={styles.docDate}>{doc.date}</p>
-                    <p className={styles.docSize}>{doc.size}</p>
+                    <div className={styles.docDetails}>
+                      <span className={styles.docDate}>{doc.date}</span>
+                      <span className={styles.docSize}>{doc.size}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -153,25 +100,20 @@ export function DashboardPage() {
         </section>
 
         <section className={styles.panel} aria-labelledby="top-tags-heading">
-          <div className={styles.panelHeader}>
-            <h2 id="top-tags-heading" className={styles.panelTitle}>
-              Top Tags
-            </h2>
-            <Link to="/documents" className={styles.panelLink}>
-              View all
-            </Link>
-          </div>
+          <PanelHeader
+            id="top-tags-heading"
+            title="Top Tags"
+            linkTo="/documents"
+          />
 
-          {isLoadingTopTags && (
-            <p className={styles.tagPanelMessage}>Loading top tags…</p>
-          )}
+          {isLoadingTopTags && <PanelMessage>Loading top tags…</PanelMessage>}
 
           {!isLoadingTopTags && !hasTopTagsError && topTags.length === 0 && (
-            <p className={styles.tagPanelMessage}>No tags available.</p>
+            <PanelMessage>No tags available.</PanelMessage>
           )}
 
           {!isLoadingTopTags && hasTopTagsError && (
-            <p className={styles.tagPanelMessage}>Unable to load top tags.</p>
+            <PanelMessage>Unable to load top tags.</PanelMessage>
           )}
 
           {!isLoadingTopTags && !hasTopTagsError && topTags.length > 0 && (
@@ -197,16 +139,12 @@ export function DashboardPage() {
       </div>
 
       <section className={styles.quickActionsPanel} aria-labelledby="quick-actions-heading">
-        <div className={styles.panelHeader}>
-          <h2 id="quick-actions-heading" className={styles.panelTitle}>
-            Quick Actions
-          </h2>
-        </div>
+        <PanelHeader id="quick-actions-heading" title="Quick Actions" />
 
         <div className={styles.quickActionsBody}>
           <ul className={styles.quickActionsList}>
             {quickActions.map((action) => (
-              <li key={action.id}>
+              <li key={action.id} className={styles.quickActionsItem}>
                 <Link to={action.to} className={styles.quickAction}>
                   <span className={styles.quickActionIcon}>
                     <QuickActionIcon id={action.id} />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
+import { MobileNav } from './MobileNav';
 import { Sidebar } from './Sidebar';
 import styles from './AppLayout.module.css';
 
@@ -30,6 +31,7 @@ export function AppLayout() {
         <main className={styles.content}>
           <Outlet />
         </main>
+        <MobileNav />
       </div>
     </div>
   );

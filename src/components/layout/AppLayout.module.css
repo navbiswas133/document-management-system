@@ -20,11 +20,18 @@
   overflow-x: auto;
   overflow-y: auto;
   background: var(--surface);
+  min-height: 0;
 }
 
 @media (min-width: 768px) {
   .content {
     padding: var(--space-md) 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding-bottom: 8px;
   }
 }
 
