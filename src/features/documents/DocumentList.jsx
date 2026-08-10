@@ -292,7 +292,7 @@ export function DocumentList({
 
               return (
                 <tr key={documentId} className={styles.tableRow}>
-                  <td data-label="File Name">
+                  <td data-label="File Name" className={styles.fileNameTd}>
                     <div className={styles.fileNameCell}>
                       <FileIcon filename={name} />
                       <span className={styles.fileName}>{name}</span>

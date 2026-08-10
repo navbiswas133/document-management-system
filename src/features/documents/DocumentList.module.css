@@ -445,6 +445,10 @@
 }
 
 @media (max-width: 767px) {
+  .resultsCard {
+    border-radius: 8px;
+  }
+
   .table thead {
     display: none;
   }
@@ -457,7 +461,7 @@
   }
 
   .table tr {
-    padding: 12px 14px;
+    padding: 12px;
     border-bottom: 1px solid var(--border);
   }
 
@@ -466,25 +470,78 @@
   }
 
   .table td {
-    padding: 6px 0;
+    padding: 5px 0;
     border-bottom: none;
   }
 
-  .table td::before {
+  .fileNameTd {
+    padding-bottom: 8px;
+  }
+
+  .fileNameTd::before {
+    display: none;
+  }
+
+  .table td:not(.fileNameTd)::before {
     content: attr(data-label);
     display: block;
     margin-bottom: 4px;
     color: var(--text-light);
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .fileName {
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .actionIcons {
     justify-content: flex-start;
+    padding-top: 4px;
   }
 
   .tableFooter {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .footerText {
+    font-size: 0.6875rem;
+    text-align: center;
+  }
+
+  .pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .iconAction {
+    width: 32px;
+    height: 32px;
+  }
+
+  .fileIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .emptyState {
+    padding: 32px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconAction:hover:not(:disabled) {
+    transform: none;
   }
 }

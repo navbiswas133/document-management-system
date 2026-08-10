@@ -281,7 +281,8 @@ export function DocumentsPage() {
               <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Upload Document
+            <span className={styles.btnLabelFull}>Upload Document</span>
+            <span className={styles.btnLabelShort}>Upload</span>
           </Link>
           <button
             type="button"
@@ -293,13 +294,18 @@ export function DocumentsPage() {
               <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            {isDownloadingZip
-              ? zipProgress?.building
-                ? 'Building ZIP…'
+            {isDownloadingZip ? (
+              zipProgress?.building
+                ? 'Building…'
                 : zipProgress
-                  ? `Downloading ${zipProgress.completed} of ${zipProgress.total}…`
-                  : 'Preparing ZIP…'
-              : 'Download All (ZIP)'}
+                  ? `${zipProgress.completed}/${zipProgress.total}`
+                  : 'Preparing…'
+            ) : (
+              <>
+                <span className={styles.btnLabelFull}>Download All (ZIP)</span>
+                <span className={styles.btnLabelShort}>Download ZIP</span>
+              </>
+            )}
           </button>
         </div>
       </header>

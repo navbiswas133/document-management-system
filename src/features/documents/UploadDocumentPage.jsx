@@ -2,6 +2,12 @@ import { useRef, useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import {
+  CustomSelect,
+  DropdownEmpty,
+  DropdownOption,
+  DropdownPanel,
+} from '../../components/ui/CustomSelect';
 import { getResponseSuccessMessage } from '../../lib/apiResponse';
 import { handleDateFieldClick } from '../../lib/datePickerField';
 import { formatDateForApi } from './searchFilters';
@@ -542,29 +548,19 @@ export function UploadDocumentPage() {
                   Category
                 </FieldLabel>
               </label>
-              <div className={`${styles.selectWrap} ${styles.selectWrap_purple}`}>
-                <select
-                  id="major-head"
-                  name="majorHead"
-                  className={fieldClassName(styles.select, styles.fieldError, Boolean(errors.majorHead))}
-                  value={form.majorHead}
-                  onChange={(event) => handleMajorHeadChange(event.target.value)}
-                  disabled={isUploading}
-                  aria-invalid={Boolean(errors.majorHead)}
-                  aria-describedby={
-                    errors.majorHead ? 'major-head-error' : undefined
-                  }
-                >
-                  {MAJOR_HEAD_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </div>
+              <CustomSelect
+                id="major-head"
+                name="majorHead"
+                value={form.majorHead}
+                onChange={handleMajorHeadChange}
+                options={MAJOR_HEAD_OPTIONS}
+                tone="purple"
+                comfortable
+                disabled={isUploading}
+                error={Boolean(errors.majorHead)}
+                aria-invalid={Boolean(errors.majorHead)}
+                aria-describedby={errors.majorHead ? 'major-head-error' : undefined}
+              />
               {errors.majorHead && (
                 <p id="major-head-error" className={styles.error}>
                   {errors.majorHead}
@@ -587,31 +583,19 @@ export function UploadDocumentPage() {
                   {minorHeadLabel}
                 </FieldLabel>
               </label>
-              <div className={`${styles.selectWrap} ${styles.selectWrap_blue}`}>
-                <select
-                  id="minor-head"
-                  name="minorHead"
-                  className={fieldClassName(styles.select, styles.fieldError, Boolean(errors.minorHead))}
-                  value={form.minorHead}
-                  onChange={(event) =>
-                    handleFieldChange('minorHead', event.target.value)
-                  }
-                  disabled={isUploading}
-                  aria-invalid={Boolean(errors.minorHead)}
-                  aria-describedby={
-                    errors.minorHead ? 'minor-head-error' : undefined
-                  }
-                >
-                  {minorHeadOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </div>
+              <CustomSelect
+                id="minor-head"
+                name="minorHead"
+                value={form.minorHead}
+                onChange={(nextValue) => handleFieldChange('minorHead', nextValue)}
+                options={minorHeadOptions}
+                tone="blue"
+                comfortable
+                disabled={isUploading}
+                error={Boolean(errors.minorHead)}
+                aria-invalid={Boolean(errors.minorHead)}
+                aria-describedby={errors.minorHead ? 'minor-head-error' : undefined}
+              />
               {errors.minorHead && (
                 <p id="minor-head-error" className={styles.error}>
                   {errors.minorHead}
@@ -636,11 +620,16 @@ export function UploadDocumentPage() {
 
               <div className={styles.tagFieldWrap} ref={tagFieldRef}>
                 <div
-                  className={fieldClassName(
-                    styles.tagsField,
-                    styles.tagsFieldError,
-                    Boolean(errors.tags),
-                  )}
+                  className={[
+                    fieldClassName(
+                      styles.tagsField,
+                      styles.tagsFieldError,
+                      Boolean(errors.tags),
+                    ),
+                    showTagList ? styles.tagsFieldOpen : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   onClick={() => tagFieldRef.current?.querySelector('input')?.focus()}
                 >
                   {form.tags.map((tag) => (
@@ -682,33 +671,27 @@ export function UploadDocumentPage() {
                 </div>
 
                 {showTagList && (
-                  <ul className={styles.tagDropdownList} role="listbox" aria-label="Tag suggestions">
-                    {isLoadingTags && (
-                      <li className={styles.tagDropdownEmpty}>Loading tags…</li>
-                    )}
+                  <DropdownPanel tone="green" aria-label="Tag suggestions">
+                    {isLoadingTags && <DropdownEmpty>Loading tags…</DropdownEmpty>}
                     {!isLoadingTags && tagListOptions.length === 0 && (
-                      <li className={styles.tagDropdownEmpty}>
+                      <DropdownEmpty>
                         {tagInput.trim()
                           ? 'No matching tags. Press Enter to add.'
                           : 'No tags available. Type and press Enter.'}
-                      </li>
+                      </DropdownEmpty>
                     )}
                     {!isLoadingTags &&
                       tagListOptions.map((tag) => (
-                        <li key={tag}>
-                          <button
-                            type="button"
-                            className={styles.tagDropdownOption}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => handleSelectTag(tag)}
-                            disabled={isUploading}
-                            role="option"
-                          >
-                            {tag}
-                          </button>
-                        </li>
+                        <DropdownOption
+                          key={tag}
+                          selected={form.tags.includes(tag)}
+                          disabled={isUploading}
+                          onClick={() => handleSelectTag(tag)}
+                        >
+                          {tag}
+                        </DropdownOption>
                       ))}
-                  </ul>
+                  </DropdownPanel>
                 )}
               </div>
 
@@ -881,7 +864,12 @@ export function UploadDocumentPage() {
               <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            {isUploading ? 'Uploading…' : 'Upload document'}
+            {isUploading ? 'Uploading…' : (
+              <>
+                <span className={styles.uploadLabelFull}>Upload document</span>
+                <span className={styles.uploadLabelShort}>Upload</span>
+              </>
+            )}
           </button>
         </div>
       </form>

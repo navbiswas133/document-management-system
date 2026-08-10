@@ -1,0 +1,220 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.triggerComfortable {
+  min-height: 44px;
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: #c5cad3;
+}
+
+.trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.triggerValue {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerPlaceholder {
+  flex: 1;
+  min-width: 0;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: transform 0.2s ease, color 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.rootOpen .chevron {
+  color: #6366f1;
+}
+
+.tone_purple.rootOpen .trigger {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+
+.tone_blue.rootOpen .trigger {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.tone_green.rootOpen .trigger {
+  border-color: #34d399;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.rootError .trigger {
+  border-color: var(--danger);
+}
+
+.rootError.rootOpen .trigger {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow:
+    0 4px 6px rgba(15, 23, 42, 0.04),
+    0 12px 28px rgba(15, 23, 42, 0.12);
+  max-height: min(240px, 50vh);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  transform-origin: top center;
+  animation: dropdownEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+@keyframes dropdownEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.optionCheck {
+  flex-shrink: 0;
+  color: currentColor;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.optionSelected .optionCheck {
+  opacity: 1;
+}
+
+.optionLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tone_purple .option:hover:not(:disabled),
+.tone_purple .optionHighlighted {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.tone_purple .optionSelected {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.tone_blue .option:hover:not(:disabled),
+.tone_blue .optionHighlighted {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.tone_blue .optionSelected {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tone_green .option:hover:not(:disabled),
+.tone_green .optionHighlighted {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.tone_green .optionSelected {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.empty {
+  padding: 12px 14px;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.45;
+}

@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { CustomSelect } from '../../components/ui/CustomSelect';
+import { useMobileNav } from '../../components/layout/useMobileNav';
 import { handleDateFieldClick } from '../../lib/datePickerField';
 import styles from './DocumentSearch.module.css';
 
@@ -40,9 +43,46 @@ export function DocumentSearch({
   onFilterChange,
   onClear,
 }) {
+  const isMobile = useMobileNav();
+  const [isFiltersOpen, setIsFiltersOpen] = useState(!isMobile);
+
+  useEffect(() => {
+    setIsFiltersOpen(!isMobile);
+  }, [isMobile]);
+
   return (
     <section className={styles.panel} aria-label="Document filters">
-      <div className={styles.filtersRow}>
+      {isMobile && (
+        <button
+          type="button"
+          className={styles.filtersToggle}
+          aria-expanded={isFiltersOpen}
+          onClick={() => setIsFiltersOpen((open) => !open)}
+        >
+          <span className={styles.filtersToggleMain}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7h16M4 12h10M4 17h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Filters
+            {filtersActive && <span className={styles.filtersActiveBadge}>Active</span>}
+          </span>
+          <svg
+            className={`${styles.filtersChevron} ${isFiltersOpen ? styles.filtersChevronOpen : ''}`}
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
+
+      <div
+        className={`${styles.filtersBody} ${isMobile && !isFiltersOpen ? styles.filtersBodyHidden : ''}`}
+      >
+        <div className={styles.filtersRow}>
         <div className={styles.filterField}>
           <label className={styles.filterLabelWrap} htmlFor="filter-major-category">
             <FilterLabel
@@ -56,24 +96,14 @@ export function DocumentSearch({
               Major category
             </FilterLabel>
           </label>
-          <div className={`${styles.selectWrap} ${styles.selectWrap_purple}`}>
-            <select
-              id="filter-major-category"
-              className={styles.filterSelect}
-              value={filters.majorHead}
-              onChange={(event) => onFilterChange('majorHead', event.target.value)}
-            >
-              <option value="">All major categories</option>
-              {majorCategoryOptions.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-            <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </div>
+          <CustomSelect
+            id="filter-major-category"
+            value={filters.majorHead}
+            onChange={(nextValue) => onFilterChange('majorHead', nextValue)}
+            options={majorCategoryOptions}
+            emptyLabel="All major categories"
+            tone="purple"
+          />
         </div>
 
         <div className={styles.filterField}>
@@ -90,24 +120,14 @@ export function DocumentSearch({
               Minor category
             </FilterLabel>
           </label>
-          <div className={`${styles.selectWrap} ${styles.selectWrap_blue}`}>
-            <select
-              id="filter-minor-category"
-              className={styles.filterSelect}
-              value={filters.minorHead}
-              onChange={(event) => onFilterChange('minorHead', event.target.value)}
-            >
-              <option value="">All minor categories</option>
-              {minorCategoryOptions.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-            <svg className={styles.selectChevron} width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </div>
+          <CustomSelect
+            id="filter-minor-category"
+            value={filters.minorHead}
+            onChange={(nextValue) => onFilterChange('minorHead', nextValue)}
+            options={minorCategoryOptions}
+            emptyLabel="All minor categories"
+            tone="blue"
+          />
         </div>
 
         <div className={styles.filterField}>
@@ -258,6 +278,7 @@ export function DocumentSearch({
             </button>
           </div>
         )}
+      </div>
       </div>
     </section>
   );
