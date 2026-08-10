@@ -1,7 +1,7 @@
 import api from '../../lib/axios';
 import { ApiResponseError, getResponseErrorMessage } from '../../lib/apiResponse';
 import { getAuthToken } from '../auth/authStorage';
-import { parseDocumentTagsResponse } from './documentTagsResponse';
+import { parseDocumentTagEntries } from './documentTagsResponse';
 import { parseSearchDocumentResponse } from './searchDocumentResponse';
 
 export const PAGE_SIZE = 10;
@@ -161,7 +161,7 @@ export async function searchDocuments(
   return response.data;
 }
 
-export async function fetchDocumentTags(term = '') {
+export async function fetchDocumentTagEntries(term = '') {
   const token = getAuthToken();
 
   if (!token) {
@@ -184,7 +184,12 @@ export async function fetchDocumentTags(term = '') {
     );
   }
 
-  return parseDocumentTagsResponse(response.data);
+  return parseDocumentTagEntries(response.data);
+}
+
+export async function fetchDocumentTags(term = '') {
+  const entries = await fetchDocumentTagEntries(term);
+  return entries.map((tag) => tag.label);
 }
 
 export async function saveDocumentEntry({

@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import {
   quickActions,
-  recentDocuments,
   statCards,
-  tagTotal,
-  topTags,
 } from './placeholderDashboardData';
+import { getTagBarWidth } from './topTagsFeature';
+import { useRecentDocuments } from './useRecentDocuments';
+import { useTopTags } from './useTopTags';
 import styles from './DashboardPage.module.css';
 
 function StatIcon({ tone }) {
@@ -81,23 +81,14 @@ function QuickActionIcon({ id }) {
   return icons[id] ?? icons.search;
 }
 
-function buildDonutGradient(tags) {
-  const total = tags.reduce((sum, tag) => sum + tag.count, 0);
-  let current = 0;
-  const stops = [];
-
-  tags.forEach((tag) => {
-    const start = (current / total) * 100;
-    current += tag.count;
-    const end = (current / total) * 100;
-    stops.push(`${tag.color} ${start}% ${end}%`);
-  });
-
-  return `conic-gradient(${stops.join(', ')})`;
-}
-
 export function DashboardPage() {
-  const donutBackground = buildDonutGradient(topTags);
+  const { topTags, isLoading: isLoadingTopTags, error: topTagsError } = useTopTags();
+  const {
+    recentDocuments,
+    isLoading: isLoadingRecentDocuments,
+    error: recentDocumentsError,
+  } = useRecentDocuments();
+  const maxTagCount = Math.max(...topTags.map((tag) => tag.count), 1);
 
   return (
     <div className={styles.page}>
@@ -126,21 +117,39 @@ export function DashboardPage() {
             </Link>
           </div>
 
-          <ul className={styles.docList}>
-            {recentDocuments.map((doc) => (
-              <li key={doc.id} className={styles.docRow}>
-                <FileIcon type={doc.type} />
-                <div className={styles.docMain}>
-                  <p className={styles.docName}>{doc.name}</p>
-                  <p className={styles.docMeta}>
-                    {doc.category} • {doc.subcategory}
-                  </p>
-                </div>
-                <p className={styles.docDate}>{doc.date}</p>
-                <p className={styles.docSize}>{doc.size}</p>
-              </li>
-            ))}
-          </ul>
+          {isLoadingRecentDocuments && (
+            <p className={styles.tagPanelMessage}>Loading recent documents…</p>
+          )}
+
+          {recentDocumentsError && !isLoadingRecentDocuments && (
+            <p className={styles.tagPanelError}>{recentDocumentsError}</p>
+          )}
+
+          {!isLoadingRecentDocuments &&
+            !recentDocumentsError &&
+            recentDocuments.length === 0 && (
+              <p className={styles.tagPanelMessage}>No documents available.</p>
+            )}
+
+          {!isLoadingRecentDocuments &&
+            !recentDocumentsError &&
+            recentDocuments.length > 0 && (
+              <ul className={styles.docList}>
+                {recentDocuments.map((doc) => (
+                  <li key={doc.id} className={styles.docRow}>
+                    <FileIcon type={doc.type} />
+                    <div className={styles.docMain}>
+                      <p className={styles.docName}>{doc.name}</p>
+                      <p className={styles.docMeta}>
+                        {doc.category} • {doc.subcategory}
+                      </p>
+                    </div>
+                    <p className={styles.docDate}>{doc.date}</p>
+                    <p className={styles.docSize}>{doc.size}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
         </section>
 
         <section className={styles.panel} aria-labelledby="top-tags-heading">
@@ -149,37 +158,41 @@ export function DashboardPage() {
               Top Tags
             </h2>
             <Link to="/documents" className={styles.panelLink}>
-              View All
+              View all
             </Link>
           </div>
 
-          <div className={styles.tagsContent}>
-            <div
-              className={styles.donut}
-              style={{ background: donutBackground }}
-              role="img"
-              aria-label={`Tag distribution chart, ${tagTotal} total tags`}
-            >
-              <div className={styles.donutHole}>
-                <span className={styles.donutValue}>{tagTotal}</span>
-                <span className={styles.donutLabel}>Total</span>
-              </div>
-            </div>
+          {isLoadingTopTags && (
+            <p className={styles.tagPanelMessage}>Loading top tags…</p>
+          )}
 
-            <ul className={styles.tagLegend}>
+          {topTagsError && !isLoadingTopTags && (
+            <p className={styles.tagPanelError}>{topTagsError}</p>
+          )}
+
+          {!isLoadingTopTags && !topTagsError && topTags.length === 0 && (
+            <p className={styles.tagPanelMessage}>No tags available.</p>
+          )}
+
+          {!isLoadingTopTags && !topTagsError && topTags.length > 0 && (
+            <ul className={styles.tagBarList}>
               {topTags.map((tag) => (
-                <li key={tag.id} className={styles.tagLegendItem}>
-                  <span
-                    className={styles.tagDot}
-                    style={{ backgroundColor: tag.color }}
-                    aria-hidden="true"
-                  />
-                  <span className={styles.tagName}>{tag.label}</span>
-                  <span className={styles.tagCount}>{tag.count}</span>
+                <li key={tag.id} className={styles.tagBarRow}>
+                  <span className={styles.tagBarLabel}>{tag.label}</span>
+                  <div className={styles.tagBarTrack}>
+                    <div
+                      className={styles.tagBarFill}
+                      style={{
+                        width: `${getTagBarWidth(tag.count, maxTagCount)}%`,
+                        backgroundColor: tag.barColor,
+                      }}
+                    />
+                  </div>
+                  <span className={styles.tagBarCount}>{tag.count}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          )}
         </section>
       </div>
 

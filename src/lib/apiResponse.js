@@ -38,6 +38,14 @@ export function getApiErrorMessage(error, fallback) {
     return error.message;
   }
 
+  if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
+    return 'Network error. Restart the dev server after pulling latest changes, then try again.';
+  }
+
+  if (error?.code === 'ECONNABORTED') {
+    return 'Request timed out. Please try again.';
+  }
+
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }

@@ -24,15 +24,81 @@ function emptyOtpDigits() {
   return Array.from({ length: OTP_LENGTH }, () => '');
 }
 
+function FolderLogoIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 8a2 2 0 012-2h5l2 2h9a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function LoginBrand() {
   return (
     <header className={styles.brand}>
-      <div className={styles.logo} aria-hidden="true" />
+      <div className={styles.logo} aria-hidden="true">
+        <FolderLogoIcon />
+      </div>
       <div className={styles.brandText}>
         <p className={styles.brandTitle}>DMS</p>
         <p className={styles.brandSubtitle}>Document Management System</p>
+        <div className={styles.brandRule} aria-hidden="true" />
       </div>
     </header>
+  );
+}
+
+function LoginFeatures() {
+  return (
+    <>
+      <div className={styles.dividerOr} aria-hidden="true">or</div>
+      <ul className={styles.features}>
+        <li className={styles.featureItem}>
+          <span className={styles.featureIcon}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 3l7 4v5c0 4.4-3 8-7 9-4-1-7-4.6-7-9V7l7-4z" stroke="currentColor" strokeWidth="2" />
+              <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+          <span className={styles.featureLabel}>Secure</span>
+        </li>
+        <li className={styles.featureItem}>
+          <span className={styles.featureIcon}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
+              <path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+          <span className={styles.featureLabel}>Private</span>
+        </li>
+        <li className={styles.featureItem}>
+          <span className={styles.featureIcon}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M13 2L4 14h7l-1 8 10-14h-7l1-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <span className={styles.featureLabel}>Instant</span>
+        </li>
+      </ul>
+    </>
   );
 }
 
@@ -40,13 +106,54 @@ function LoginHero() {
   return (
     <div className={styles.heroPanel} aria-hidden="true">
       <div className={styles.heroArt}>
-        <div className={styles.heroCloud} />
-        <div className={styles.heroShield} />
-        <div className={styles.heroDocs} />
-        <div className={styles.heroPlant} />
+        <div className={styles.heroDots} />
         <div className={styles.heroWave} />
+        <div className={styles.heroOrbit}>
+          <span className={`${styles.orbitIcon} ${styles.orbitIconTop}`}>
+            <FolderLogoIcon />
+          </span>
+          <span className={`${styles.orbitIcon} ${styles.orbitIconRight}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
+              <path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          </span>
+          <span className={`${styles.orbitIcon} ${styles.orbitIconBottom}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 16V8M8 12l4-4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          </span>
+          <span className={`${styles.orbitIcon} ${styles.orbitIconLeft}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M8 4h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="2" />
+              <path d="M14 4v4h4M10 13h8M10 17h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+        </div>
+        <div className={styles.heroPedestal} />
+        <div className={styles.heroFolder}>
+          <div className={styles.heroFolderTab} />
+          <div className={styles.heroFolderDocs} />
+          <div className={styles.heroShield}>
+            <div className={styles.heroShieldLock} />
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+function CardFooter() {
+  return (
+    <footer className={styles.cardFooter}>
+      <span className={styles.footerCheck} aria-hidden="true">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      </span>
+      Trusted by thousands of users
+    </footer>
   );
 }
 
@@ -115,10 +222,11 @@ function OtpStep({
 
       <button
         type="button"
-        className={styles.secondaryButton}
+        className={styles.primaryButton}
         onClick={onVerify}
         disabled={isVerifying}
       >
+        <SendIcon />
         {isVerifying ? 'Verifying…' : 'Verify OTP'}
       </button>
     </section>
@@ -176,6 +284,8 @@ export function LoginPage() {
   }
 
   function handleMobileChange(event) {
+    const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 10);
+    event.target.value = digitsOnly;
     mobileField.onChange(event);
 
     if (showOtpStep) {
@@ -299,99 +409,99 @@ export function LoginPage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.formPanel}>
-          <LoginBrand />
+        <div className={styles.cardBody}>
+          <div className={styles.formPanel}>
+            <LoginBrand />
 
-          <div className={styles.signInSection}>
-            <header className={styles.intro}>
-              <h1 className={styles.tagline}>Secure. Organize. Access.</h1>
-              <p className={styles.instruction} id="sign-in-hint">
-                {showOtpStep
-                  ? 'Enter the OTP sent to your mobile number'
-                  : 'Enter your mobile number to continue'}
-              </p>
-            </header>
-
-            {!showOtpStep && (
-              <form
-                className={styles.mobileForm}
-                onSubmit={handleSubmit(onSendOtp)}
-                noValidate
-                aria-describedby="sign-in-hint"
-              >
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="mobile">
-                    Mobile Number
-                  </label>
-                  <input
-                    id="mobile"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="Enter mobile number"
-                    className={styles.phoneInput}
-                    disabled={isSendingOtp}
-                    name={mobileField.name}
-                    ref={mobileField.ref}
-                    onBlur={mobileField.onBlur}
-                    onChange={handleMobileChange}
-                    aria-invalid={Boolean(errors.mobile)}
-                    aria-describedby={
-                      errors.mobile
-                        ? 'mobile-error mobile-hint'
-                        : 'mobile-hint'
-                    }
-                  />
-                  <p id="mobile-hint" className={styles.fieldHintMuted}>
-                    We will send a one-time password to this number.
-                  </p>
-                  {errors.mobile && (
-                    <p id="mobile-error" className={styles.error}>
-                      {errors.mobile.message}
-                    </p>
-                  )}
+            {!showOtpStep ? (
+              <>
+                <div>
+                  <h1 className={styles.headline}>
+                    Access what matters.
+                    <br />
+                    <span className={styles.headlineAccent}>Securely.</span>
+                  </h1>
                 </div>
 
-                <button
-                  type="submit"
-                  className={styles.primaryButton}
-                  disabled={isSendingOtp}
+                <form
+                  className={styles.mobileForm}
+                  onSubmit={handleSubmit(onSendOtp)}
+                  noValidate
                 >
-                  {isSendingOtp ? 'Sending OTP…' : 'Send OTP'}
-                </button>
-              </form>
-            )}
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="mobile">
+                      Mobile Number
+                    </label>
+                    <input
+                      id="mobile"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel-national"
+                      placeholder="Enter mobile number"
+                      className={`${styles.mobileInput} ${errors.mobile ? styles.mobileInputInvalid : ''}`}
+                      disabled={isSendingOtp}
+                      maxLength={10}
+                      name={mobileField.name}
+                      ref={mobileField.ref}
+                      onBlur={mobileField.onBlur}
+                      onChange={handleMobileChange}
+                      aria-invalid={Boolean(errors.mobile)}
+                      aria-describedby={errors.mobile ? 'mobile-error' : undefined}
+                    />
+                    {errors.mobile && (
+                      <p id="mobile-error" className={styles.error}>
+                        {errors.mobile.message}
+                      </p>
+                    )}
+                  </div>
 
+                  <button
+                    type="submit"
+                    className={styles.primaryButton}
+                    disabled={isSendingOtp}
+                  >
+                    <SendIcon />
+                    {isSendingOtp ? 'Sending OTP…' : 'Send OTP'}
+                  </button>
+                </form>
+
+                <LoginFeatures />
+              </>
+            ) : (
+              <>
+                <div>
+                  <h1 className={styles.headline}>
+                    Verify your
+                    <br />
+                    <span className={styles.headlineAccent}>mobile number.</span>
+                  </h1>
+                  <p className={styles.instruction} id="sign-in-hint">
+                    Enter the OTP sent to your phone.
+                  </p>
+                </div>
+
+                <OtpStep
+                  mobileNumber={mobileNumber}
+                  otpDigits={otpDigits}
+                  otpRefs={otpRefs}
+                  otpError={otpError}
+                  resendSeconds={resendSeconds}
+                  isSendingOtp={isSendingOtp}
+                  isVerifying={isVerifying}
+                  onOtpChange={onOtpChange}
+                  onOtpKeyDown={onOtpKeyDown}
+                  onOtpPaste={onOtpPaste}
+                  onVerify={onVerifyOtp}
+                  onResend={onResendOtp}
+                />
+              </>
+            )}
           </div>
 
-          {showOtpStep && (
-            <OtpStep
-              mobileNumber={mobileNumber}
-              otpDigits={otpDigits}
-              otpRefs={otpRefs}
-              otpError={otpError}
-              resendSeconds={resendSeconds}
-              isSendingOtp={isSendingOtp}
-              isVerifying={isVerifying}
-              onOtpChange={onOtpChange}
-              onOtpKeyDown={onOtpKeyDown}
-              onOtpPaste={onOtpPaste}
-              onVerify={onVerifyOtp}
-              onResend={onResendOtp}
-            />
-          )}
-
-          <footer className={styles.termsFooter}>
-            <p className={styles.terms}>
-              By continuing, you agree to our{' '}
-              <button type="button" className={styles.termsLink}>
-                Terms &amp; Conditions
-              </button>
-            </p>
-          </footer>
+          <LoginHero />
         </div>
 
-        <LoginHero />
+        <CardFooter />
       </div>
     </div>
   );
