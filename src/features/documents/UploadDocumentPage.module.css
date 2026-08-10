@@ -1,11 +1,28 @@
 .page {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  align-self: flex-start;
   gap: clamp(12px, 3vw, 20px);
   width: 100%;
-  max-width: min(640px, 100%);
+  max-width: 640px;
   min-width: 0;
-  margin: 0 auto;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .page {
+    width: 680px;
+    max-width: 680px;
+  }
+}
+
+@media (min-width: 992px) {
+  .page {
+    width: 920px;
+    max-width: 920px;
+  }
 }
 
 .pageHeader {
@@ -326,6 +343,7 @@
   flex-direction: column;
   gap: 10px;
   min-width: 0;
+  min-height: 0;
 }
 
 .dropzone {
@@ -660,11 +678,11 @@
 
   .fieldGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-width: 480px;
+    max-width: none;
   }
 
   .formCard > .field {
-    max-width: 480px;
+    max-width: none;
   }
 
   .actions {
@@ -682,6 +700,63 @@
     width: auto;
     min-width: 140px;
     min-height: 40px;
+  }
+}
+
+@media (min-width: 992px) {
+  .formCard {
+    display: grid;
+    grid-template-columns: minmax(0, 520px) minmax(280px, 400px);
+    column-gap: clamp(20px, 3vw, 28px);
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .fieldGrid {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formCard > .field {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .fileDivider {
+    display: none;
+  }
+
+  .fileSection {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    min-height: 100%;
+    padding: clamp(12px, 2vw, 16px);
+    background: linear-gradient(180deg, #fafbff 0%, #f4f6fb 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .fileSection .dropzone:not(.dropzoneHasFile) {
+    flex: 1;
+    min-height: 220px;
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+@media (min-width: 1200px) {
+  .fieldGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .fieldFull {
+    grid-column: 1 / -1;
   }
 }
 

@@ -1,3 +1,4 @@
+// Save / read login in the browser so the user stays logged in after refresh.
 const STORAGE_KEY = 'dms_auth';
 
 export function loadAuth() {

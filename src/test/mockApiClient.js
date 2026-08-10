@@ -1,3 +1,4 @@
+// Helpers for API tests — fake Axios responses without calling the real backend.
 import { getMockApiPost } from '../lib/__mocks__/axios';
 
 export { getMockApiPost };

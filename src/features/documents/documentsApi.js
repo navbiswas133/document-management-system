@@ -1,3 +1,4 @@
+// Document APIs: search, tags, and upload. All need a user token (not the demo admin token).
 import api from '../../lib/axios';
 import { ApiResponseError, getResponseErrorMessage } from '../../lib/apiResponse';
 import { withInflightDedup } from '../../lib/requestDedup';

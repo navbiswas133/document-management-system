@@ -1,3 +1,4 @@
+// App entry: React mounts the root component into index.html's #root div.
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/globals.css'

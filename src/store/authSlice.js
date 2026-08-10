@@ -1,3 +1,4 @@
+// Login state in Redux. On load, we read saved login from localStorage so refresh keeps the user signed in.
 import { createSlice } from '@reduxjs/toolkit';
 import {
   clearAuthStorage,

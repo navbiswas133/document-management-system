@@ -1,3 +1,4 @@
+// Thin wrappers around login API endpoints (OTP send + verify).
 import api from '../../lib/axios';
 import { ApiResponseError, getResponseErrorMessage } from '../../lib/apiResponse';
 

@@ -1,3 +1,4 @@
+// Vitest runs before each component test (cleanup DOM, mock matchMedia for responsive UI).
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';

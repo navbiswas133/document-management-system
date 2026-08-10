@@ -10,13 +10,16 @@ import { DocumentDetailsPage } from '../features/documents/DocumentDetailsPage';
 import { UploadDocumentPage } from '../features/documents/UploadDocumentPage';
 import { AdminUserCreationPage } from '../features/admin/AdminUserCreationPage';
 
+// All app URLs live here. Protected routes sit inside layout wrappers that check login first.
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Public pages — no login required */}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
 
+      {/* Logged-in user area: dashboard + documents */}
       <Route element={<UserProtectedLayout />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -26,6 +29,7 @@ export function AppRoutes() {
         </Route>
       </Route>
 
+      {/* Admin-only area (separate from normal users) */}
       <Route element={<AdminProtectedLayout />}>
         <Route element={<AppLayout />}>
           <Route path="/admin" element={<AdminUserCreationPage />} />
