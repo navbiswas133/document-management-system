@@ -1,11 +1,7 @@
 import { Link } from 'react-router-dom';
-import {
-  quickActions,
-  statCards,
-} from './placeholderDashboardData';
+import { quickActions } from './placeholderDashboardData';
 import { getTagBarWidth } from './topTagsFeature';
-import { useRecentDocuments } from './useRecentDocuments';
-import { useTopTags } from './useTopTags';
+import { useDashboardData } from './useDashboardData';
 import styles from './DashboardPage.module.css';
 
 function StatIcon({ tone }) {
@@ -82,12 +78,15 @@ function QuickActionIcon({ id }) {
 }
 
 export function DashboardPage() {
-  const { topTags, isLoading: isLoadingTopTags, error: topTagsError } = useTopTags();
   const {
+    statCards,
+    topTags,
     recentDocuments,
-    isLoading: isLoadingRecentDocuments,
-    error: recentDocumentsError,
-  } = useRecentDocuments();
+    isLoadingTopTags,
+    isLoadingRecentDocuments,
+    hasTopTagsError,
+    hasRecentDocumentsError,
+  } = useDashboardData();
   const maxTagCount = Math.max(...topTags.map((tag) => tag.count), 1);
 
   return (
@@ -121,18 +120,19 @@ export function DashboardPage() {
             <p className={styles.tagPanelMessage}>Loading recent documents…</p>
           )}
 
-          {recentDocumentsError && !isLoadingRecentDocuments && (
-            <p className={styles.tagPanelError}>{recentDocumentsError}</p>
-          )}
-
           {!isLoadingRecentDocuments &&
-            !recentDocumentsError &&
+            !hasRecentDocumentsError &&
             recentDocuments.length === 0 && (
               <p className={styles.tagPanelMessage}>No documents available.</p>
             )}
 
           {!isLoadingRecentDocuments &&
-            !recentDocumentsError &&
+            hasRecentDocumentsError && (
+              <p className={styles.tagPanelMessage}>Unable to load recent documents.</p>
+            )}
+
+          {!isLoadingRecentDocuments &&
+            !hasRecentDocumentsError &&
             recentDocuments.length > 0 && (
               <ul className={styles.docList}>
                 {recentDocuments.map((doc) => (
@@ -166,15 +166,15 @@ export function DashboardPage() {
             <p className={styles.tagPanelMessage}>Loading top tags…</p>
           )}
 
-          {topTagsError && !isLoadingTopTags && (
-            <p className={styles.tagPanelError}>{topTagsError}</p>
-          )}
-
-          {!isLoadingTopTags && !topTagsError && topTags.length === 0 && (
+          {!isLoadingTopTags && !hasTopTagsError && topTags.length === 0 && (
             <p className={styles.tagPanelMessage}>No tags available.</p>
           )}
 
-          {!isLoadingTopTags && !topTagsError && topTags.length > 0 && (
+          {!isLoadingTopTags && hasTopTagsError && (
+            <p className={styles.tagPanelMessage}>Unable to load top tags.</p>
+          )}
+
+          {!isLoadingTopTags && !hasTopTagsError && topTags.length > 0 && (
             <ul className={styles.tagBarList}>
               {topTags.map((tag) => (
                 <li key={tag.id} className={styles.tagBarRow}>

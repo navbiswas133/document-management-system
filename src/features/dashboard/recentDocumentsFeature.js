@@ -32,7 +32,14 @@ function getUploadTimestamp(uploadTime) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
-function mapDocumentForDashboard(listDoc) {
+export function sortDocumentsByUploadTime(documents) {
+  return [...documents].sort(
+    (left, right) =>
+      getUploadTimestamp(right.upload_time) - getUploadTimestamp(left.upload_time),
+  );
+}
+
+export function mapDocumentForDashboard(listDoc) {
   return {
     id: listDoc.id,
     name: listDoc.name,
@@ -56,11 +63,7 @@ export async function loadRecentDocuments(limit = RECENT_DOCUMENTS_LIMIT) {
 
   const { documents } = parseSearchDocumentResponse(responseData);
 
-  return documents
-    .sort(
-      (left, right) =>
-        getUploadTimestamp(right.upload_time) - getUploadTimestamp(left.upload_time),
-    )
+  return sortDocumentsByUploadTime(documents)
     .slice(0, limit)
     .map(mapDocumentForDashboard);
 }

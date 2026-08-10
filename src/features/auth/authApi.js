@@ -2,9 +2,13 @@ import api from '../../lib/axios';
 import { ApiResponseError, getResponseErrorMessage } from '../../lib/apiResponse';
 
 export async function generateOTP(mobileNumber) {
-  const response = await api.post('/generateOTP', {
-    mobile_number: mobileNumber,
-  });
+  const response = await api.post(
+    '/generateOTP',
+    {
+      mobile_number: mobileNumber,
+    },
+    { skipErrorToast: true },
+  );
 
   if (!response.data?.status) {
     throw new ApiResponseError(
@@ -16,10 +20,14 @@ export async function generateOTP(mobileNumber) {
 }
 
 export async function validateOTP(mobileNumber, otp) {
-  const response = await api.post('/validateOTP', {
-    mobile_number: mobileNumber,
-    otp,
-  });
+  const response = await api.post(
+    '/validateOTP',
+    {
+      mobile_number: mobileNumber,
+      otp,
+    },
+    { skipErrorToast: true },
+  );
 
   if (!response.data?.status) {
     throw new ApiResponseError(

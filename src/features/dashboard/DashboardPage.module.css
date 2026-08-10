@@ -79,6 +79,13 @@
   letter-spacing: -0.02em;
 }
 
+.statPanelError {
+  margin: -4px 0 0;
+  color: var(--danger);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
 .middleGrid {
   display: grid;
   grid-template-columns: 1fr;

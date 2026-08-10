@@ -2,7 +2,7 @@ import { useRef, useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { getApiErrorMessage, getResponseSuccessMessage } from '../../lib/apiResponse';
+import { getResponseSuccessMessage } from '../../lib/apiResponse';
 import { handleDateFieldClick } from '../../lib/datePickerField';
 import { formatDateForApi } from './searchFilters';
 import { fetchDocumentTags, saveDocumentEntry } from './documentsApi';
@@ -179,7 +179,7 @@ export function UploadDocumentPage() {
       setExistingTags(tags);
     } catch (error) {
       if (!silent) {
-        toast.error(getApiErrorMessage(error, 'Unable to load tags.'));
+        // Toast handled by global API interceptor.
       }
     } finally {
       setIsLoadingTags(false);
@@ -455,13 +455,8 @@ export function UploadDocumentPage() {
       );
       resetFormAfterSuccess();
       navigate('/documents');
-    } catch (uploadError) {
-      toast.error(
-        getApiErrorMessage(
-          uploadError,
-          'Unable to upload document. Please try again.',
-        ),
-      );
+    } catch {
+      // Toast handled by global API interceptor.
     } finally {
       setIsUploading(false);
     }

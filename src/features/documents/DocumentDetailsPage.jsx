@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { getApiErrorMessage } from '../../lib/apiResponse';
 import { fetchDocumentById } from './documentsApi';
 import {
   downloadDocument,
@@ -102,7 +101,7 @@ export function DocumentDetailsPage() {
         }
 
         setDocument(null);
-        setError(getApiErrorMessage(loadError, 'Unable to load document.'));
+        setError('load_failed');
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -131,7 +130,7 @@ export function DocumentDetailsPage() {
         <section className={styles.notFound} role="status">
           <h1 className={styles.notFoundTitle}>Document not found</h1>
           <p className={styles.notFoundText}>
-            {error || 'This document could not be found.'}
+            This document could not be found.
           </p>
           <Link to="/documents" className={styles.notFoundAction}>
             Back to documents

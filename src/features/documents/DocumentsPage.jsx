@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import debounce from 'lodash/debounce';
 import { toast } from 'sonner';
-import { getApiErrorMessage } from '../../lib/apiResponse';
+import { isAbortError, getApiErrorMessage } from '../../lib/apiResponse';
 import {
   DocumentSearch,
   getDefaultMajorCategories,
@@ -30,14 +30,6 @@ const EMPTY_FILTERS = {
 };
 
 const SEARCH_DEBOUNCE_MS = 400;
-
-function isAbortError(error) {
-  return (
-    error?.name === 'CanceledError' ||
-    error?.name === 'AbortError' ||
-    error?.code === 'ERR_CANCELED'
-  );
-}
 
 function hasActiveFilters(filters, searchQuery) {
   return Boolean(
@@ -67,16 +59,12 @@ export function DocumentsPage() {
   const searchQueryRef = useRef(searchQuery);
   searchQueryRef.current = searchQuery;
 
-  const abortControllerRef = useRef(null);
+  const fetchIdRef = useRef(0);
   const skipFilterScheduleRef = useRef(true);
 
   const fetchDocuments = useCallback(async (searchValue, filterState, page) => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+    const fetchId = fetchIdRef.current + 1;
+    fetchIdRef.current = fetchId;
 
     const token = getDocumentApiToken();
 
@@ -85,7 +73,6 @@ export function DocumentsPage() {
       setTotalCount(0);
       toast.error('Authentication required.');
       setIsLoading(false);
-      abortControllerRef.current = null;
       return;
     }
 
@@ -104,9 +91,11 @@ export function DocumentsPage() {
     });
 
     try {
-      const responseData = await searchDocuments(requestBody, {
-        signal: controller.signal,
-      });
+      const responseData = await searchDocuments(requestBody);
+
+      if (fetchId !== fetchIdRef.current) {
+        return;
+      }
 
       const { documents: entries, total } = parseSearchDocumentResponse(
         responseData,
@@ -116,19 +105,15 @@ export function DocumentsPage() {
       setTotalCount(total);
       setCurrentPage(page);
     } catch (loadError) {
-      if (isAbortError(loadError)) {
+      if (fetchId !== fetchIdRef.current || isAbortError(loadError)) {
         return;
       }
 
       setDocuments([]);
       setTotalCount(0);
-      toast.error(
-        getApiErrorMessage(loadError, 'Unable to load documents. Please try again.'),
-      );
     } finally {
-      if (abortControllerRef.current === controller) {
+      if (fetchId === fetchIdRef.current) {
         setIsLoading(false);
-        abortControllerRef.current = null;
       }
     }
   }, []);
@@ -174,9 +159,6 @@ export function DocumentsPage() {
   useEffect(() => {
     return () => {
       debouncedListFetch.cancel();
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
     };
   }, [debouncedListFetch]);
 

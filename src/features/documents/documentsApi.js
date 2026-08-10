@@ -1,5 +1,7 @@
 import api from '../../lib/axios';
 import { ApiResponseError, getResponseErrorMessage } from '../../lib/apiResponse';
+import { withInflightDedup } from '../../lib/requestDedup';
+import { withServiceRetry } from '../../lib/retryRequest';
 import { getAuthToken } from '../auth/authStorage';
 import { parseDocumentTagEntries } from './documentTagsResponse';
 import { parseSearchDocumentResponse } from './searchDocumentResponse';
@@ -139,52 +141,77 @@ export async function searchDocuments(
   requestBody = DEFAULT_SEARCH_REQUEST_BODY,
   options = {},
 ) {
-  const token = getAuthToken();
+  const execute = () =>
+    withServiceRetry(async () => {
+      const token = getAuthToken();
 
-  if (!token) {
-    throw new Error('Document search requires authentication.');
+      if (!token) {
+        throw new Error('Document search requires authentication.');
+      }
+
+      const response = await api.post('/searchDocumentEntry', requestBody, {
+        headers: {
+          token,
+        },
+        signal: options.signal,
+        skipErrorToast: options.skipErrorToast,
+      });
+
+      if (!response.data?.status) {
+        throw new ApiResponseError(
+          getResponseErrorMessage(response.data, 'Unable to load documents.'),
+        );
+      }
+
+      return response.data;
+    });
+
+  if (options.signal) {
+    return execute();
   }
 
-  const response = await api.post('/searchDocumentEntry', requestBody, {
-    headers: {
-      token,
-    },
-    signal: options.signal,
-  });
+  const requestKey = `search:${JSON.stringify(requestBody)}`;
 
-  if (!response.data?.status) {
-    throw new ApiResponseError(
-      getResponseErrorMessage(response.data, 'Unable to load documents.'),
-    );
-  }
-
-  return response.data;
+  return withInflightDedup(requestKey, execute);
 }
 
-export async function fetchDocumentTagEntries(term = '') {
-  const token = getAuthToken();
+export async function fetchDocumentTagEntries(term = '', options = {}) {
+  const execute = () =>
+    withServiceRetry(async () => {
+      const token = getAuthToken();
 
-  if (!token) {
-    throw new Error('Document tags require authentication.');
+      if (!token) {
+        throw new Error('Document tags require authentication.');
+      }
+
+      const response = await api.post(
+        '/documentTags',
+        { term },
+        {
+          headers: {
+            token,
+          },
+          signal: options.signal,
+          skipErrorToast: options.skipErrorToast,
+        },
+      );
+
+      if (!response.data?.status) {
+        throw new ApiResponseError(
+          getResponseErrorMessage(response.data, 'Unable to load tags.'),
+        );
+      }
+
+      return parseDocumentTagEntries(response.data);
+    });
+
+  if (options.signal) {
+    return execute();
   }
 
-  const response = await api.post(
-    '/documentTags',
-    { term },
-    {
-      headers: {
-        token,
-      },
-    },
-  );
+  const requestKey = `documentTags:${term}`;
 
-  if (!response.data?.status) {
-    throw new ApiResponseError(
-      getResponseErrorMessage(response.data, 'Unable to load tags.'),
-    );
-  }
-
-  return parseDocumentTagEntries(response.data);
+  return withInflightDedup(requestKey, execute);
 }
 
 export async function fetchDocumentTags(term = '') {
@@ -201,37 +228,39 @@ export async function saveDocumentEntry({
   tags,
   userId,
 }) {
-  const token = getAuthToken();
+  return withServiceRetry(async () => {
+    const token = getAuthToken();
 
-  if (!token) {
-    throw new Error('Document upload requires authentication.');
-  }
+    if (!token) {
+      throw new Error('Document upload requires authentication.');
+    }
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append(
-    'data',
-    JSON.stringify({
-      major_head: majorHead,
-      minor_head: minorHead,
-      document_date: documentDate,
-      document_remarks: remarks,
-      tags: tags.map((tagName) => ({ tag_name: tagName })),
-      user_id: userId,
-    }),
-  );
-
-  const response = await api.post('/saveDocumentEntry', formData, {
-    headers: {
-      token,
-    },
-  });
-
-  if (!response.data?.status) {
-    throw new ApiResponseError(
-      getResponseErrorMessage(response.data, 'Unable to upload document.'),
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append(
+      'data',
+      JSON.stringify({
+        major_head: majorHead,
+        minor_head: minorHead,
+        document_date: documentDate,
+        document_remarks: remarks,
+        tags: tags.map((tagName) => ({ tag_name: tagName })),
+        user_id: userId,
+      }),
     );
-  }
 
-  return response.data;
+    const response = await api.post('/saveDocumentEntry', formData, {
+      headers: {
+        token,
+      },
+    });
+
+    if (!response.data?.status) {
+      throw new ApiResponseError(
+        getResponseErrorMessage(response.data, 'Unable to upload document.'),
+      );
+    }
+
+    return response.data;
+  });
 }

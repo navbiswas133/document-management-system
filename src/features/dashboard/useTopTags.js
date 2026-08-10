@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { getApiErrorMessage } from '../../lib/apiResponse';
+import { isAbortError } from '../../lib/apiResponse';
 import { loadTopTags } from './topTagsFeature';
 
 export function useTopTags() {
@@ -32,9 +32,7 @@ export function useTopTags() {
       } catch (fetchError) {
         if (!cancelled) {
           setTopTags([]);
-          setError(
-            getApiErrorMessage(fetchError, 'Unable to load top tags.'),
-          );
+          setError(isAbortError(fetchError) ? '' : 'failed');
         }
       } finally {
         if (!cancelled) {

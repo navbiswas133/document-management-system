@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { getApiErrorMessage } from '../../lib/apiResponse';
+import { isAbortError } from '../../lib/apiResponse';
 import { loadRecentDocuments } from './recentDocumentsFeature';
 
 export function useRecentDocuments() {
@@ -32,9 +32,7 @@ export function useRecentDocuments() {
       } catch (fetchError) {
         if (!cancelled) {
           setRecentDocuments([]);
-          setError(
-            getApiErrorMessage(fetchError, 'Unable to load recent documents.'),
-          );
+          setError(isAbortError(fetchError) ? '' : 'failed');
         }
       } finally {
         if (!cancelled) {

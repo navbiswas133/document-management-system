@@ -15,6 +15,7 @@ export default defineConfig({
         target: 'https://apis.allsoft.co',
         changeOrigin: true,
         secure: true,
+        timeout: 60000,
       },
       '/s3-files': {
         target: 'https://allsoft-consulting.s3.ap-south-1.amazonaws.com',
@@ -30,6 +31,7 @@ export default defineConfig({
         target: 'https://apis.allsoft.co',
         changeOrigin: true,
         secure: true,
+        timeout: 60000,
       },
       '/s3-files': {
         target: 'https://allsoft-consulting.s3.ap-south-1.amazonaws.com',
